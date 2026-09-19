@@ -8,7 +8,7 @@ import {
   Power, CheckCircle, Clock, RotateCcw, Wifi, Server, Smartphone, Laptop,
   X, ExternalLink, AlertCircle
 } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, API_BASE_URL } from '../../services/api';
 import { AntiScreenshotShield } from '../../components/common/AntiScreenshotShield';
 
 // Multi-tone Web Audio API EVM Acoustic Synthesizer
@@ -269,7 +269,7 @@ export default function EVMKiosk() {
   useEffect(() => {
     async function loadVotingSchedule() {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/settings/');
+        const res = await fetch(`${API_BASE_URL}/settings/`);
         if (res.ok) {
           const data = await res.json();
           setVotingSchedule({

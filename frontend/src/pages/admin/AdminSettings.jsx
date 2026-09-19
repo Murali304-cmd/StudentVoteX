@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
 import {
   Sliders,
@@ -15,7 +16,7 @@ export function AdminSettings() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/settings/')
+    fetch(`${API_BASE_URL}/settings/`)
       .then(res => res.json())
       .then(data => setSettings(data))
       .catch(err => console.error(err));
@@ -94,7 +95,7 @@ export function AdminSettings() {
               <button
                 type="button"
                 onClick={() => {
-                  fetch('http://127.0.0.1:8000/api/settings/', {
+                  fetch(`${API_BASE_URL}/settings/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ voting_hours_enforced: !settings?.votingHoursEnforced })
