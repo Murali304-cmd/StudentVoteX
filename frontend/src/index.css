@@ -1,0 +1,690 @@
+/* ==========================================================================
+   VoteChain - Pure Light Mode Futuristic Design System (ABC Institution)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Clean Light Theme Tokens */
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-translucent: rgba(255, 255, 255, 0.88);
+  --bg-surface-secondary: #f1f5f9;
+  --bg-surface-tertiary: #e2e8f0;
+  
+  /* Borders */
+  --border-subtle: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-focus: #0284c7;
+
+  /* Typography */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+
+  /* Accent Glows & Colors */
+  --cyan-primary: #0284c7;
+  --cyan-light: #e0f2fe;
+  --cyan-border: #bae6fd;
+  
+  --indigo-primary: #4f46e5;
+  --indigo-light: #e0e7ff;
+  --indigo-border: #c7d2fe;
+
+  --emerald-primary: #059669;
+  --emerald-light: #d1fae5;
+  --emerald-border: #a7f3d0;
+
+  --amber-primary: #d97706;
+  --amber-light: #fef3c7;
+  --amber-border: #fde68a;
+
+  --rose-primary: #e11d48;
+  --rose-light: #ffe4e6;
+  --rose-border: #fecdd3;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-cyan-glow: 0 4px 20px -2px rgba(2, 132, 199, 0.18);
+  --shadow-indigo-glow: 0 4px 20px -2px rgba(79, 70, 229, 0.18);
+
+  /* Font Families */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Outfit', var(--font-sans);
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Reset & Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #070d1e;
+  color: #f8fafc;
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+code, pre, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Glassmorphism Card System */
+.glass-card {
+  background: var(--bg-surface-translucent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-lg);
+}
+
+.glass-card-interactive {
+  background: var(--bg-surface-translucent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.glass-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: var(--cyan-primary);
+  box-shadow: var(--shadow-cyan-glow);
+}
+
+/* Badges & Pills */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-cyan {
+  background: var(--cyan-light);
+  color: var(--cyan-primary);
+  border: 1px solid var(--cyan-border);
+}
+
+.badge-indigo {
+  background: var(--indigo-light);
+  color: var(--indigo-primary);
+  border: 1px solid var(--indigo-border);
+}
+
+.badge-emerald {
+  background: var(--emerald-light);
+  color: var(--emerald-primary);
+  border: 1px solid var(--emerald-border);
+}
+
+.badge-amber {
+  background: var(--amber-light);
+  color: var(--amber-primary);
+  border: 1px solid var(--amber-border);
+}
+
+.badge-rose {
+  background: var(--rose-light);
+  color: var(--rose-primary);
+  border: 1px solid var(--rose-border);
+}
+
+.badge-slate {
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-indigo {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+}
+
+.btn-indigo:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  transform: translateY(-1px);
+}
+
+.btn-emerald {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.3);
+}
+
+.btn-emerald:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.btn-danger {
+  background: #ffe4e6;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Forms & Inputs */
+.input-field {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--cyan-primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+/* Tables */
+.table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.data-table th {
+  background: var(--bg-surface-secondary);
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tr:hover td {
+  background: rgba(241, 245, 249, 0.7);
+}
+
+/* Pulse animation for node/security indicators */
+@keyframes pulse-cyan {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.75; }
+}
+
+.pulse-dot-cyan {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #0284c7;
+  box-shadow: 0 0 8px #0284c7;
+  animation: pulse-cyan 2s infinite ease-in-out;
+}
+
+.pulse-dot-green {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-cyan 2s infinite ease-in-out;
+}
+
+/* EVM Hardware & Laser Scan Animations */
+@keyframes laserSweep {
+  0% {
+    top: 0%;
+    opacity: 0.9;
+  }
+  50% {
+    top: 96%;
+    opacity: 1;
+  }
+  100% {
+    top: 0%;
+    opacity: 0.9;
+  }
+}
+
+.animate-laser-sweep {
+  animation: laserSweep 2.2s ease-in-out infinite;
+}
+
+@keyframes reverseSpin {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-spin-reverse {
+  animation: reverseSpin 2s linear infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   VotaNova Enterprise Cybersecurity Badges & Telemetry Styles
+   ========================================================================== */
+.badge-cyber {
+  background: #0f172a;
+  color: #38bdf8;
+  border: 1px solid #1e293b;
+  font-family: var(--font-mono);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+}
+
+.badge-hsm {
+  background: #1e1b4b;
+  color: #a5b4fc;
+  border: 1px solid #3730a3;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.badge-bft {
+  background: #022c22;
+  color: #6ee7b7;
+  border: 1px solid #065f46;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.badge-threat {
+  background: #450a0a;
+  color: #fca5a5;
+  border: 1px solid #991b1b;
+  font-weight: 700;
+  animation: pulseThreat 2s infinite;
+}
+
+@keyframes pulseThreat {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.3); }
+}
+
+.cyber-dark-card {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  color: #f1f5f9;
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.6);
+}
+
+.cyber-telemetry-panel {
+  background: #030712;
+  border: 1px solid #111827;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  color: #22d3ee;
+  padding: 14px;
+}
+
+/* ==========================================================================
+   Futuristic Cyber Animation Suite (VotaNova Dynamic Enclave)
+   ========================================================================== */
+
+@keyframes cyberOrbFloat1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.45;
+  }
+  33% {
+    transform: translate(60px, -50px) scale(1.15);
+    opacity: 0.65;
+  }
+  66% {
+    transform: translate(-40px, 40px) scale(0.9);
+    opacity: 0.35;
+  }
+}
+
+@keyframes cyberOrbFloat2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1.1);
+    opacity: 0.4;
+  }
+  33% {
+    transform: translate(-70px, 60px) scale(0.95);
+    opacity: 0.6;
+  }
+  66% {
+    transform: translate(50px, -40px) scale(1.2);
+    opacity: 0.35;
+  }
+}
+
+@keyframes cyberOrbFloat3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(0.9);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(80px, 50px) scale(1.25);
+    opacity: 0.55;
+  }
+}
+
+@keyframes cyberGridDrift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 50px;
+  }
+}
+
+@keyframes cyberScanline {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+@keyframes borderRotateBeam {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes radarSweep {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes holographicShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.cyber-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: cyberGridDrift 20s linear infinite;
+}
+
+.portal-card-interactive {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.portal-card-interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================================================
+   StudentVoiceX - Zoom In & Out Futuristic Brand Loader System
+   ========================================================================== */
+
+@keyframes svxZoomInOut {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.65;
+    filter: drop-shadow(0 0 12px rgba(2, 132, 199, 0.35));
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+    filter: drop-shadow(0 0 35px rgba(168, 85, 247, 0.65)) drop-shadow(0 0 60px rgba(56, 189, 248, 0.6));
+  }
+  100% {
+    transform: scale(0.82);
+    opacity: 0.65;
+    filter: drop-shadow(0 0 12px rgba(2, 132, 199, 0.35));
+  }
+}
+
+@keyframes svxPulseRing {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.95);
+    opacity: 0;
+  }
+}
+
+@keyframes svxOrbitSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes svxShimmerText {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.svx-zoom-in-out {
+  animation: svxZoomInOut 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.svx-pulse-ring {
+  animation: svxPulseRing 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+.svx-orbit-spin {
+  animation: svxOrbitSpin 6s linear infinite;
+}
+
+.svx-shimmer-text {
+  background: linear-gradient(90deg, #0284c7 0%, #a855f7 30%, #38bdf8 60%, #0284c7 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: svxShimmerText 3s linear infinite;
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   EVM Anti-Screenshot & Ballot Secrecy Security Enforcement
+   ========================================================================== */
+.evm-kiosk-protected {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.evm-kiosk-protected img,
+.evm-kiosk-protected svg,
+.evm-kiosk-protected button,
+.evm-kiosk-protected div {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+}
+
+/* Obfuscate screen content on printing */
+@media print {
+  body.evm-mode-active,
+  .evm-kiosk-protected,
+  .evm-kiosk-container {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.evm-mode-active::before {
+    display: block !important;
+    content: "⛔ SCREEN CAPTURE & PRINTING PROHIBITED IN EVM MODE (VOTER BALLOT SECRECY ACT)";
+    font-size: 22pt;
+    font-weight: 900;
+    color: #e11d48;
+    text-align: center;
+    padding: 100px 30px;
+    font-family: sans-serif;
+    border: 4px dashed #e11d48;
+    margin: 40px;
+  }
+}
+
+
+

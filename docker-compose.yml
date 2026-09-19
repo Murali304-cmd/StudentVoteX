@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Database Service (PostgreSQL 16)
+  db:
+    image: postgres:16-alpine
+    container_name: votechain-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: votechain_db
+      POSTGRES_USER: votechain_user
+      POSTGRES_PASSWORD: votechain_secure_password_2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U votechain_user -d votechain_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # In-Memory Mempool Buffer & Cache (Redis 7)
+  redis:
+    image: redis:7-alpine
+    container_name: votechain-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Django Backend API & Blockchain Core
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: votechain-backend
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py seed_abc_institution &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+      - backend_data:/app/blockchain_data
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=votechain-enterprise-production-signing-secret-key-2026
+      - DATABASE_URL=postgres://votechain_user:votechain_secure_password_2026@db:5432/votechain_db
+      - REDIS_URL=redis://redis:6379/0
+      - ALLOWED_HOSTS=*
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Frontend Web Client & Kiosk UI (NGINX + React SPA)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: votechain-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_data:

@@ -1,0 +1,624 @@
+{
+  "difficulty": 0,
+  "used_nullifiers": [
+    "40d761688b54d5bc3575719a9cbfdaa40d1de48f55e93aa68a768444ca5e23b4",
+    "205c00fd0c3fcec0fda9b0e01ad66f9889e82d06f09bd2ff3dd1519a6b7d5de2",
+    "629613a612162d849f1978faf0318a7f2f11f26c051509786a2817bce650c92e",
+    "236a478cec15c1c9d844c9f0e694a400d206c47286d245cde76cf2d4163ce251",
+    "NULLIFIER-GENESIS-ROOT",
+    "1e165de0e7a7e8aa2a3c0066f375c9af964276cbee91a95ac495ef0e0904860a",
+    "6f417a6ba31ef9d7dfa4a5a5226ab0e4e3d6660b5b00be746804baa84d528cde",
+    "b2051364b4d7cc34765c170492e43bba03c4901aa8c9d5ef602f321fc9b0e323",
+    "fd1d822bbd692613eed72e3af32e9379b93931397d296c94dea39b7ddb27113f",
+    "4b7a47f82ec147dd03c7b0246710fe39eb4516097e0a638a364551d776cb66b0",
+    "fff13e6991ea40d46f93e8f3642f304932587562b886907355fbb95b3832758f"
+  ],
+  "chain": [
+    {
+      "id": "BLOCK-GENESIS-VOTANOVA-0000",
+      "index": 0,
+      "timestamp": "2026-01-01T00:00:00.000000Z",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-GENESIS-ROOT",
+          "tx_id": "TX-VOTANOVA-GENESIS-ROOT",
+          "type": "AUDIT_VERIFIED",
+          "anonymous_vote_id": "GENESIS-ROOT-AUTHORITY",
+          "election_id": 0,
+          "candidate_id": 0,
+          "candidate_name": "VotaNova Cryptographic Root Authority",
+          "timestamp": "2026-01-01T00:00:00.000000Z",
+          "vote_hash": "9afef36c34a8528484ad05f938fbcb30632312cd293c1fc5545ce4f0986c8c93",
+          "signatures": [
+            {
+              "signer": "authority:election-directorate-hsm",
+              "signature": "GENESIS_ED25519_HSM_SIGNATURE_VERIFIED",
+              "timestamp": "2026-01-01T00:00:00.000000Z"
+            }
+          ],
+          "signature": "GENESIS_ED25519_HSM_SIGNATURE_VERIFIED",
+          "merkle_proof": [],
+          "audit_path": "election:0:root",
+          "block_index": 0,
+          "nullifier_hash": "NULLIFIER-GENESIS-ROOT",
+          "zk_proof_ref": "ZK-GROTH16-GENESIS",
+          "status": "FINALIZED"
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkle_root": "9afef36c34a8528484ad05f938fbcb30632312cd293c1fc5545ce4f0986c8c93",
+      "hash": "faecbafa6d89aaa9ac4e3a71c94d9b6e8278819658b66b1d71c8dafd3cab58b8",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "53b8e4d6-f5c1-4743-a1e0-628a2226eee1",
+      "index": 1,
+      "timestamp": "2026-09-19T12:08:56.413822+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789819736-E584BB",
+          "tx_id": "TX-VOTANOVA-1789819736-E584BB",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "89f8bd55dcd314339a2846b7b5bb20b010667bfd1c10a0a63d142651091fa728",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "UJGHFzVRBuLmUquhzSL+iosaXxM0Tj+WFMIZiFtji//FVGx4ll8On8oSvgnEg1Haqahh+Om0sQXhuepq0JsvNuPYNMWvCLwX5ZN7yv0cuC0VGDYwUth4ulfBDXkcC7yn+AXP0Vt5pgo68pKsEAXkj3w0DT+yDyySs/BaPVLTWeqOF3yTwFCuasg6+gRwi8NpmK2ureL+k35FPolQwMRioHq1lyVYMr9ZMDzbZQl2snxiPeBLdW/4VrlB",
+              "nonce": "u/H0rlvNw+s6V9jI",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "89f8bd55dcd314339a2846b7b5bb20b010667bfd1c10a0a63d142651091fa728",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "t5e9OhWC27v/xOWwdA5co0UnWfLsxT9XR3x8X0fpI3juKWkx/nperOpSbjfc6QGA9iRrUjyg9fYG2HeZnfE/Cg==",
+              "timestamp": "2026-09-19T12:08:56.316085+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAeBXAcon9zPN1pKYfT+QJ1vedJS+b+quKnMrZgLL+qvw=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "t5e9OhWC27v/xOWwdA5co0UnWfLsxT9XR3x8X0fpI3juKWkx/nperOpSbjfc6QGA9iRrUjyg9fYG2HeZnfE/Cg==",
+          "merkle_proof": [],
+          "audit_path": "election:2:evm:EVM-01",
+          "timestamp": "2026-09-19T12:08:56.316085+00:00",
+          "block_index": 1,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-F7FFC553",
+          "election_id": 2,
+          "candidate_id": 7,
+          "candidate_name": "Tanvi Joshi",
+          "nullifier_hash": "fd1d822bbd692613eed72e3af32e9379b93931397d296c94dea39b7ddb27113f",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "faecbafa6d89aaa9ac4e3a71c94d9b6e8278819658b66b1d71c8dafd3cab58b8",
+      "merkle_root": "89f8bd55dcd314339a2846b7b5bb20b010667bfd1c10a0a63d142651091fa728",
+      "hash": "269c9740bfc25cc92722bd817bec16c9d981c3913d6d8352fd43167f7faeac71",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "2859fd03-b730-43f9-9834-77d99bfee6c0",
+      "index": 2,
+      "timestamp": "2026-09-19T12:16:54.534207+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789820214-683E06",
+          "tx_id": "TX-VOTANOVA-1789820214-683E06",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "b39cd444ed44138a0286217bd037353b5f547c5b941a3ac4103211782bb8b3c5",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "O3atg+m63MEMV6kJdTZrOggauPzx2ZuoFVjH7sn9oawuWGovCjmUa0ZYYa/fJQBnSTy5rE1Ix6zuU0HkM4abuNvfsfeRoqBdqOLAROuc0LJMOkO9kgAYQVK5U9VQc/kBZXL6d7kGKJ32ebW0RfNxwQv8uAv7ktisKa05wJH3Omd2Ln4XjVCdQKwRZ5e1JZX7nFtjZMPr7nNdFjz+bFfGcKzEvijAVkotX7FxyGV+RD4Q4v3Td8vurcYP",
+              "nonce": "ETHarGGtLk6lUs0y",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "b39cd444ed44138a0286217bd037353b5f547c5b941a3ac4103211782bb8b3c5",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "AyQ7FjAMPYNKKd+pxWwlaDBatsz4HH3u5B7MMjuUa77FvIs1LDKdt4gsu/MfvxoB6vUu5pTrPBs/jMtHf0psCw==",
+              "timestamp": "2026-09-19T12:16:54.526809+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAeBXAcon9zPN1pKYfT+QJ1vedJS+b+quKnMrZgLL+qvw=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "AyQ7FjAMPYNKKd+pxWwlaDBatsz4HH3u5B7MMjuUa77FvIs1LDKdt4gsu/MfvxoB6vUu5pTrPBs/jMtHf0psCw==",
+          "merkle_proof": [],
+          "audit_path": "election:2:evm:EVM-01",
+          "timestamp": "2026-09-19T12:16:54.526809+00:00",
+          "block_index": 2,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-80B253E5",
+          "election_id": 2,
+          "candidate_id": 6,
+          "candidate_name": "Aditya Sengupta",
+          "nullifier_hash": "236a478cec15c1c9d844c9f0e694a400d206c47286d245cde76cf2d4163ce251",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "269c9740bfc25cc92722bd817bec16c9d981c3913d6d8352fd43167f7faeac71",
+      "merkle_root": "b39cd444ed44138a0286217bd037353b5f547c5b941a3ac4103211782bb8b3c5",
+      "hash": "d2cc793bef42b7796ef9c2943a9673f0046e1e9018a626a034088d1c272e4b2d",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "74c55acc-c61c-4300-aaf3-4900c2287cf3",
+      "index": 3,
+      "timestamp": "2026-09-19T12:38:09.725975+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789821489-AD407F",
+          "tx_id": "TX-VOTANOVA-1789821489-AD407F",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "7c1ddb8a00af237e10bcda2e78cba1929cbb7c79b2d4186639e60bf8531a587b",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "Nt+2lGJYb6CNVzGDe+8V9+X73MSAYZMLRAdEJlmEmHFRTGAWVmC6BXAIV4t7PHz9PYaB6UprcULaD4ANPk7DXl9egqmhjX9KH8sRbQiWfbiTLy5LlnkY4eFrf0HY1s2LjQ3dAnSvXGrQMwuAAHvCytMcDH+lgFmeHY3nI1+EhKnMKF3/RafTBfMjjLIj3ROdwfmKCbWv43hpalAGc9YGoYKkyzRTlCr70ugXduOhVWDJ2BPe0d+IJAK7",
+              "nonce": "ZON/Ap0Hk5dXRCg/",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "7c1ddb8a00af237e10bcda2e78cba1929cbb7c79b2d4186639e60bf8531a587b",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "xVA9AgD66Uc2v5f8h5w9L9WshALHzU0eCif6k8zA6Jc4fuA7C2zOb5UoJsDLS9eb2erK+jt5QVKxWusQAXGrBQ==",
+              "timestamp": "2026-09-19T12:38:09.706233+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAeBXAcon9zPN1pKYfT+QJ1vedJS+b+quKnMrZgLL+qvw=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "xVA9AgD66Uc2v5f8h5w9L9WshALHzU0eCif6k8zA6Jc4fuA7C2zOb5UoJsDLS9eb2erK+jt5QVKxWusQAXGrBQ==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T12:38:09.706233+00:00",
+          "block_index": 3,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-F2BE32A1",
+          "election_id": 1,
+          "candidate_id": 1,
+          "candidate_name": "Arun Kumar",
+          "nullifier_hash": "629613a612162d849f1978faf0318a7f2f11f26c051509786a2817bce650c92e",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "d2cc793bef42b7796ef9c2943a9673f0046e1e9018a626a034088d1c272e4b2d",
+      "merkle_root": "7c1ddb8a00af237e10bcda2e78cba1929cbb7c79b2d4186639e60bf8531a587b",
+      "hash": "d18c6c257e4f0e415e71bf3a5468e8eee4a4dd823665e4d1560b526119df4e05",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "9c6d47b6-f7ab-4c55-aa7f-1a4dfe4109d7",
+      "index": 4,
+      "timestamp": "2026-09-19T13:10:35.179943+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789823435-73B0AA",
+          "tx_id": "TX-VOTANOVA-1789823435-73B0AA",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "9b71af7e6912128ca920cd14b361bffc37b0d9a1c8c9865c7960956a192e5349",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "ynT//U5bqTvpNCq3muZkHUv1s08ASzqdMVFd4yQfYjb3QQVKfC1un35xjLo9OdXI+mN7vUiN4snWy00XHCQ0GcD/j+dWb0Qb2ZuQDWXDISche20rl9b88gfUYYC9NOJxIWvZbFxhLUnLgAFCau6obTTO+KejwwShCurk7LcG7hAcDtR5rYxCEPiZcr6ONMMfoq8vDD5oN6E1goFOI4NMGe7lqD2Jz4PPD4OraucMEmZ2KUyfq0il8jw4",
+              "nonce": "8IfqrfXg1CDy26ml",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "9b71af7e6912128ca920cd14b361bffc37b0d9a1c8c9865c7960956a192e5349",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "S1wD8iWR6Di1bMkkpzTOExBVtbBJfVQb3J32TKOBlcGCHQ63ER3CV1mLsfLkNF3Um5ekiRMFIr/GYR78TJQVDw==",
+              "timestamp": "2026-09-19T13:10:35.154234+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKBq20RdlPqmRyoz9q4O28rT3ZyUbaAfAz0zu6rcGyzU=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "S1wD8iWR6Di1bMkkpzTOExBVtbBJfVQb3J32TKOBlcGCHQ63ER3CV1mLsfLkNF3Um5ekiRMFIr/GYR78TJQVDw==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T13:10:35.154234+00:00",
+          "block_index": 4,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-D4A8C93F",
+          "election_id": 1,
+          "candidate_id": 3,
+          "candidate_name": "Siddharth Verma",
+          "nullifier_hash": "40d761688b54d5bc3575719a9cbfdaa40d1de48f55e93aa68a768444ca5e23b4",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "d18c6c257e4f0e415e71bf3a5468e8eee4a4dd823665e4d1560b526119df4e05",
+      "merkle_root": "9b71af7e6912128ca920cd14b361bffc37b0d9a1c8c9865c7960956a192e5349",
+      "hash": "a9b8678593cfbd3f8e64221a375d085893598bbb228c423fdda44d08f219625a",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "c4b3c2ea-f850-4b8a-bad2-13909bd54deb",
+      "index": 5,
+      "timestamp": "2026-09-19T13:24:49.636541+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789824289-AE9493",
+          "tx_id": "TX-VOTANOVA-1789824289-AE9493",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "6b7ba13f35e3217cebdb828a6c49e696553fc21490eddf48e98e23e00b1a2174",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "fc1hxrct4bwMGcoZ9U8B4LtYUh1wHua/fpMZHin5S38E76ocwtSKwOYPXa4dK4a0Gw09YPglMQW8xY9sDMLRnEsujApUIkxd0SIdeztXk9vPVEOZ1YPY2cHYcuOdxQXRbneNzBTYoATT27aP7KclNHUW3CrIKOhTjAwaqHNDxfNQy3URmg0lJymr/fJuqoWpfEfJhEdf2MDfrx/yE3y+DQyzmZVa8W2Mo8r+RDZ2rIRLCn+feEYsGN4dag==",
+              "nonce": "dS9p27sTIy7ND2/R",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "6b7ba13f35e3217cebdb828a6c49e696553fc21490eddf48e98e23e00b1a2174",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "nT0uYwExPAXP8XL4qlAqyScFuohyweremYoQBW822XDI64kilZBCz0TKhopMFfXG+LR7heSMntVKleaQzZjAAQ==",
+              "timestamp": "2026-09-19T13:24:49.622651+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKBq20RdlPqmRyoz9q4O28rT3ZyUbaAfAz0zu6rcGyzU=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "nT0uYwExPAXP8XL4qlAqyScFuohyweremYoQBW822XDI64kilZBCz0TKhopMFfXG+LR7heSMntVKleaQzZjAAQ==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T13:24:49.622651+00:00",
+          "block_index": 5,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-1B05A3B6",
+          "election_id": 1,
+          "candidate_id": 12,
+          "candidate_name": "Rohan Deshmukh",
+          "nullifier_hash": "fff13e6991ea40d46f93e8f3642f304932587562b886907355fbb95b3832758f",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "a9b8678593cfbd3f8e64221a375d085893598bbb228c423fdda44d08f219625a",
+      "merkle_root": "6b7ba13f35e3217cebdb828a6c49e696553fc21490eddf48e98e23e00b1a2174",
+      "hash": "f81e8d8719492179d2a1dd05f48430d8e5182db31de7ed5452d6a153076c5475",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "9aa613a4-59b9-493e-b5ca-0114912484cd",
+      "index": 6,
+      "timestamp": "2026-09-19T13:25:19.323436+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789824319-B4323B",
+          "tx_id": "TX-VOTANOVA-1789824319-B4323B",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "3913acc3dffd56ba12e5914811b3aae81a9ac160c1483adb01210e345035d5eb",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "XEJ4Y9gV99Na6BdSz21fyPrWz5zarLJw317LATKLVfTX4W6qqAvL0QnhOYOA7FJ6Kay5ZPrxO8b/3yIRV59WJPG4jHFFxvMQsJXeOdfBYa139LEbXXplEutsngiNfXqWoMHRtU2Ck6Lo2lzHpg++Ykzqaj8287cQEZ2pw+vLiHfCR9nK8ufHny9Yr5n+6v4OKWHqlyVwIlHTPTt2YR+sEwSYfZYw/1IBM/k0wpgyaZoLsItqBCLTmY5eNA==",
+              "nonce": "KYvqfmS4nxMVLg4g",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "3913acc3dffd56ba12e5914811b3aae81a9ac160c1483adb01210e345035d5eb",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "YKEL++Sc9JPj1eEo+F03HZvj/B24Iarae7GymvRtpGOcRodNk4aDOeXic50JjpRxrC21j5weldtCfdgUiCQfCg==",
+              "timestamp": "2026-09-19T13:25:19.317169+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKBq20RdlPqmRyoz9q4O28rT3ZyUbaAfAz0zu6rcGyzU=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "YKEL++Sc9JPj1eEo+F03HZvj/B24Iarae7GymvRtpGOcRodNk4aDOeXic50JjpRxrC21j5weldtCfdgUiCQfCg==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T13:25:19.317169+00:00",
+          "block_index": 6,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-0EE1B372",
+          "election_id": 1,
+          "candidate_id": 11,
+          "candidate_name": "Meera Krishnan",
+          "nullifier_hash": "205c00fd0c3fcec0fda9b0e01ad66f9889e82d06f09bd2ff3dd1519a6b7d5de2",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "f81e8d8719492179d2a1dd05f48430d8e5182db31de7ed5452d6a153076c5475",
+      "merkle_root": "3913acc3dffd56ba12e5914811b3aae81a9ac160c1483adb01210e345035d5eb",
+      "hash": "fcfd204bb5d06b8378e6d5d4ce649bbbf2067643e88e921d3816a4ba64177a7b",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "d46768e4-7b6e-4fe0-9ca3-8fe136abaf16",
+      "index": 7,
+      "timestamp": "2026-09-19T13:26:05.822751+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789824365-0A94C6",
+          "tx_id": "TX-VOTANOVA-1789824365-0A94C6",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "0738ffe983f3ae5ce79313d3824293bcd71bb87c06d2c777cedf1826a11c83a7",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "Z7v3oYuYlRiQmqzNvr+bzi49oq8fKmn4TFm5wPXNN3yXzbvTpSEgTHj6bXghXcvES7KR+tPCdTlUeBgB2bSb3T21qxzZHVbQ0VolQiAMYGatbbddPJrs38/d40p4ZxuZTSvgAH+R+p3ciDiZE7r1LMx57537vIyAAw5gsoBDt1vDAZhrH46qe+IG5pW6kVPo5TcqATTgjKiY9rSTIUEhl6LbFUx4uBYewgeUI6L8ZNP1m5fo3Bm4ZmLlCg==",
+              "nonce": "JOVS57pBmHVzHRnE",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "0738ffe983f3ae5ce79313d3824293bcd71bb87c06d2c777cedf1826a11c83a7",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "tZruqFpQWTjht5NpmYGoGcoP4fQLJ0rqMiuZQxBHKtpwGRJkoAtcS8MhMZyFa6pDg1OLXtjhC1gJPnZfdE7/Bg==",
+              "timestamp": "2026-09-19T13:26:05.816469+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKBq20RdlPqmRyoz9q4O28rT3ZyUbaAfAz0zu6rcGyzU=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "tZruqFpQWTjht5NpmYGoGcoP4fQLJ0rqMiuZQxBHKtpwGRJkoAtcS8MhMZyFa6pDg1OLXtjhC1gJPnZfdE7/Bg==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T13:26:05.816469+00:00",
+          "block_index": 7,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-938EB51B",
+          "election_id": 1,
+          "candidate_id": 12,
+          "candidate_name": "Rohan Deshmukh",
+          "nullifier_hash": "4b7a47f82ec147dd03c7b0246710fe39eb4516097e0a638a364551d776cb66b0",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "fcfd204bb5d06b8378e6d5d4ce649bbbf2067643e88e921d3816a4ba64177a7b",
+      "merkle_root": "0738ffe983f3ae5ce79313d3824293bcd71bb87c06d2c777cedf1826a11c83a7",
+      "hash": "2804bdffd288416bfc8ac2817b34b70c67caa592e52e32c6ab4d8f7a1fd921cb",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "4afb128f-8be9-4d13-91c2-f0c4882ae7a1",
+      "index": 8,
+      "timestamp": "2026-09-19T13:27:08.323597+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789824428-1CAC09",
+          "tx_id": "TX-VOTANOVA-1789824428-1CAC09",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "59adea8bb35bb8304e57e291b964608f680db7e26b3d903772e66420a4d96785",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "A/2/nPM4sQrgkWzHshMJShte2ql1YrQwn4IL5EFMF19CCyz3RkdCtGBJTorSIQVEjebxnxW4aegpQPsjwYkrdvXixjRiqM0rFwo1T2sxK3tlDEA5qw+8KajB4dKDzFn+HOWEgQ48cF7sbWHJiCw4HO6/pmE+szPjI6d6zfWWIYeAbgaeywiU5WJS7blZxdC4rKhcKV6j5EPqL8qGQuGg9Kf7V4KOE59u3wKlH6hoKt6Z4qq29ngHu0rOfg==",
+              "nonce": "PUwQCN0YDFf1t08I",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "59adea8bb35bb8304e57e291b964608f680db7e26b3d903772e66420a4d96785",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "IqCNHafkAlkMw1r26C4/WQp2IAunD2Hs4WrLa/cJRly4E3WtQRUPlwsjWYxLJGysgyFzmd5s2jjZnYIi8Kn4Bg==",
+              "timestamp": "2026-09-19T13:27:08.315685+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKBq20RdlPqmRyoz9q4O28rT3ZyUbaAfAz0zu6rcGyzU=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "IqCNHafkAlkMw1r26C4/WQp2IAunD2Hs4WrLa/cJRly4E3WtQRUPlwsjWYxLJGysgyFzmd5s2jjZnYIi8Kn4Bg==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T13:27:08.315685+00:00",
+          "block_index": 8,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-DB133867",
+          "election_id": 1,
+          "candidate_id": 12,
+          "candidate_name": "Rohan Deshmukh",
+          "nullifier_hash": "6f417a6ba31ef9d7dfa4a5a5226ab0e4e3d6660b5b00be746804baa84d528cde",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "2804bdffd288416bfc8ac2817b34b70c67caa592e52e32c6ab4d8f7a1fd921cb",
+      "merkle_root": "59adea8bb35bb8304e57e291b964608f680db7e26b3d903772e66420a4d96785",
+      "hash": "635c5ac5c2ea3031960fe008773357501de29146795562faf55695de26f0ad6e",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "f1888b3c-7fd3-4ffb-abb4-4075d2403aff",
+      "index": 9,
+      "timestamp": "2026-09-19T13:27:40.248862+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789824460-26299E",
+          "tx_id": "TX-VOTANOVA-1789824460-26299E",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "36d96b65efbdfb93d87156a03b79cc43ebdf45998c711236e4257e8125211c71",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "HWrj3uWiZEOz5NQtjR2vXmkHF0iTMK6SX3bS5Vgwz2ws60XtBa3X/DR81RdpDX72SGS1GtonAOEJ5FzAek8dE7ICegHFOyhbsu5Z5CVKgn5rMbhlFeef8QnBNC1btpsm7dp2XbL/80sXnmSSvveKV7Hh5mf6PMrcnkN97IuIfqJol0JoBVppxlRAEyuem+eT/T7KNjHL2lRaOe8QBUoQ8W4a3sECnRZ4JD0f9aIdgOEzZZasN+4O2G6avw==",
+              "nonce": "qx3O6AgNLoSdFUkt",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "36d96b65efbdfb93d87156a03b79cc43ebdf45998c711236e4257e8125211c71",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "zyDQwrzqbWaNcgxcDlCGrjndQPfrhNmTH8/c2MHhsKB4jFAagipyl5C93u8hVQilqQJR917VJmNDSy9tDqbmBg==",
+              "timestamp": "2026-09-19T13:27:40.240849+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKBq20RdlPqmRyoz9q4O28rT3ZyUbaAfAz0zu6rcGyzU=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "zyDQwrzqbWaNcgxcDlCGrjndQPfrhNmTH8/c2MHhsKB4jFAagipyl5C93u8hVQilqQJR917VJmNDSy9tDqbmBg==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T13:27:40.240849+00:00",
+          "block_index": 9,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-1D6335C1",
+          "election_id": 1,
+          "candidate_id": 12,
+          "candidate_name": "Rohan Deshmukh",
+          "nullifier_hash": "b2051364b4d7cc34765c170492e43bba03c4901aa8c9d5ef602f321fc9b0e323",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "635c5ac5c2ea3031960fe008773357501de29146795562faf55695de26f0ad6e",
+      "merkle_root": "36d96b65efbdfb93d87156a03b79cc43ebdf45998c711236e4257e8125211c71",
+      "hash": "b724a83ce73b97212c8e24d3a87ca50729939faa6032d499b6d3f5258c102a43",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    },
+    {
+      "id": "99879e53-6576-45d6-97c4-d45bb67ef19f",
+      "index": 10,
+      "timestamp": "2026-09-19T13:42:44.394958+00:00",
+      "transactions": [
+        {
+          "id": "TX-VOTANOVA-1789825362-760821",
+          "tx_id": "TX-VOTANOVA-1789825362-760821",
+          "type": "VOTE_RECORDED",
+          "encrypted_data": {
+            "vote_hash": "7068ccbe2f995980aa835cb9295f87eedbf05c4690a1d0d9bd6a3095593dd6e7",
+            "vote_source": "EVM_KIOSK",
+            "kiosk_device_id": "EVM-01",
+            "encrypted_payload": {
+              "ciphertext": "YkzVT91QdPRKdaJ4n33+8lVYSofC/8L0PlAwlv9NSbqjEv9WgCUa9MdRSzyfTt26eY4KFmhWVz71SoRSOkAQoUc5ocPQUWi+foKJxQG7ASGZzqiXETDvjKQzaQqFjuoEBNjOdliCfXp61x1LXL2Ly+VfPYZt6C7+hJjOO8zOqHEw8V3mcR+e9trdTCCaajW+2MEU87qrl4q9cHay8zpw7AYlngqIwYjR/BHPmjR7A8BUARIDnjmVmjGn8Q==",
+              "nonce": "YsOzZRFFRcu2BoQo",
+              "algorithm": "AES-256-GCM"
+            }
+          },
+          "vote_hash": "7068ccbe2f995980aa835cb9295f87eedbf05c4690a1d0d9bd6a3095593dd6e7",
+          "signatures": [
+            {
+              "signer": "authority:election-commission",
+              "signature": "h+MopwoAkQJnCwl09ZLTVHudGX8Db+vsLZTMO5CwbbRbEccf0fG/+n8Lxrv/ZX0O0CqAPNCJ2KTtLAZifVfcCQ==",
+              "timestamp": "2026-09-19T13:42:42.140177+00:00",
+              "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA5JsDBblGR981JHu2bBXFRcEe9+zlvr7AqcraAHgJE2Y=\n-----END PUBLIC KEY-----\n"
+            }
+          ],
+          "signature": "h+MopwoAkQJnCwl09ZLTVHudGX8Db+vsLZTMO5CwbbRbEccf0fG/+n8Lxrv/ZX0O0CqAPNCJ2KTtLAZifVfcCQ==",
+          "merkle_proof": [],
+          "audit_path": "election:1:evm:EVM-01",
+          "timestamp": "2026-09-19T13:42:42.140177+00:00",
+          "block_index": 10,
+          "status": "FINALIZED",
+          "anonymous_vote_id": "VOTE-2485B375",
+          "election_id": 1,
+          "candidate_id": 12,
+          "candidate_name": "Rohan Deshmukh",
+          "nullifier_hash": "1e165de0e7a7e8aa2a3c0066f375c9af964276cbee91a95ac495ef0e0904860a",
+          "zk_proof_ref": ""
+        }
+      ],
+      "transaction_count": 1,
+      "previous_hash": "b724a83ce73b97212c8e24d3a87ca50729939faa6032d499b6d3f5258c102a43",
+      "merkle_root": "7068ccbe2f995980aa835cb9295f87eedbf05c4690a1d0d9bd6a3095593dd6e7",
+      "hash": "9b502081b3a90c3a0ae4f64aa2af7cd9d0390071713d66176d4fff7765480dd5",
+      "signers": [
+        "election_authority:hsm-root",
+        "observer:civil_society_monitor",
+        "observer:academic_oversight"
+      ],
+      "consensus_status": "FINALIZED",
+      "status": "FINALIZED",
+      "nonce": 0,
+      "difficulty": 0
+    }
+  ],
+  "mempool": []
+}
