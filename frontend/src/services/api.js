@@ -4,7 +4,8 @@
  */
 import { emitBackgroundEvent, BG_EVENTS } from './eventBus';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api` : 'http://127.0.0.1:8000/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+export const API_BASE_URL = rawApiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '') + '/api';
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;

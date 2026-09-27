@@ -1,0 +1,4 @@
+# Force shell scripts to use LF line endings so they execute properly on Linux (Render / Docker)
+*.sh text eol=lf
+Procfile text eol=lf
+render.yaml text eol=lf

@@ -166,7 +166,7 @@ def setup_president_election():
 
     print(f"[OK] Successfully created {len(created_candidates)} President election members:")
     for idx, c in enumerate(created_candidates, 1):
-        print(f"  {idx}. {c.name} ({c.position}) | Dept: {c.department} | Symbol: {c.election_symbol} ({c.symbol_name}) | ID: {c.candidate_id}")
+        print(f"  {idx}. {c.name} ({c.position}) | Dept: {c.department} | Symbol: {c.symbol_name} | ID: {c.candidate_id}")
 
     # 3. Reset demo student eligibility so testing can vote cleanly
     VoterEligibilityRecord.objects.filter(election=election).update(has_voted=False, voted_at=None, voting_session_token=None)

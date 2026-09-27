@@ -21,12 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-yzpn#ju-l_0mcf0p3i^)ox3-t1r72r9+b782_v(*pa2ve34xk_'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-yzpn#ju-l_0mcf0p3i^)ox3-t1r72r9+b782_v(*pa2ve34xk_')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = ['*']
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS')
+ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',')] if allowed_hosts_env else ['*']
 
 # Application definition
 
@@ -156,12 +157,24 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Static files storage for production (WhiteNoise)
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # CSRF Trusted Origins for Cloud Deployment
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://*.vercel.app',
+    'https://*.pages.dev',
+    'https://*.netlify.app',
+    'https://*.up.railway.app',
+    'https://*.pythonanywhere.com',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
+
+extra_csrf = os.environ.get('CSRF_TRUSTED_ORIGINS')
+if extra_csrf:
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_csrf.split(',') if origin.strip()])
