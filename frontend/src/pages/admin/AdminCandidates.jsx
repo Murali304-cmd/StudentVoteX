@@ -25,9 +25,29 @@ export function AdminCandidates() {
     department: 'Information Technology',
     year: 'III',
     section: 'A',
-    manifesto: ''
+    manifesto: '',
+    election_symbol: '★',
+    symbol_image: ''
   };
   const [formData, setFormData] = useState(initialForm);
+
+  const handleSymbolUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Symbol image must be under 2MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        setFormData(prev => ({
+          ...prev,
+          symbol_image: uploadEvent.target.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -57,6 +77,7 @@ export function AdminCandidates() {
     try {
       await api.candidates.create(formData);
       setShowModal(false);
+      setFormData(initialForm);
       fetchData();
     } catch (e) {
       alert("Error adding candidate: " + e.message);
@@ -104,8 +125,8 @@ export function AdminCandidates() {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
                 <div style={{
-                  width: '50px',
-                  height: '50px',
+                  width: '54px',
+                  height: '54px',
                   borderRadius: '12px',
                   background: 'linear-gradient(135deg, #e0f2fe 0%, #c7d2fe 100%)',
                   display: 'flex',
@@ -113,9 +134,15 @@ export function AdminCandidates() {
                   justifyContent: 'center',
                   color: 'var(--cyan-primary)',
                   fontWeight: 800,
-                  fontSize: '1.1rem'
+                  fontSize: '1.2rem',
+                  overflow: 'hidden',
+                  border: '1px solid #cbd5e1'
                 }}>
-                  {cand.name.charAt(0)}
+                  {cand.symbol_image ? (
+                    <img src={cand.symbol_image} alt={cand.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  ) : (
+                    cand.election_symbol || cand.name.charAt(0)
+                  )}
                 </div>
 
                 <div>
@@ -248,6 +275,58 @@ export function AdminCandidates() {
                     className="input-field"
                     value={formData.section}
                     onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Election Symbol Image (JPEG/PNG) */}
+              <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '14px', marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Candidate Election Symbol (JPEG / PNG Image File)
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
+                  onChange={handleSymbolUpload}
+                  className="input-field"
+                  style={{ padding: '8px' }}
+                />
+                
+                {formData.symbol_image ? (
+                  <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px', background: '#ffffff', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                    <img
+                      src={formData.symbol_image}
+                      alt="Symbol Preview"
+                      style={{ width: '44px', height: '44px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                    />
+                    <div style={{ flex: 1, fontSize: '0.78rem', color: '#15803d', fontWeight: 700 }}>
+                      ✓ JPEG Symbol Image Loaded for Ballot
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, symbol_image: '' })}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.74rem', padding: '4px 10px' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '6px', fontSize: '0.72rem', color: '#64748b' }}>
+                    Upload an official high-resolution JPEG/PNG emblem for ballot choices & EVM buttons.
+                  </div>
+                )}
+
+                <div style={{ marginTop: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>
+                    Fallback Symbol Emoji / Unicode
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. 🦁, ⚡, 🚀, 🎓"
+                    value={formData.election_symbol}
+                    onChange={(e) => setFormData({ ...formData, election_symbol: e.target.value })}
                   />
                 </div>
               </div>

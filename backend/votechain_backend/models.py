@@ -5,12 +5,32 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 
+class Department(models.Model):
+    code = models.CharField(max_length=20, unique=True)  # e.g. CSE, ECE, IT, MECH
+    name = models.CharField(max_length=150)
+    roll_prefix = models.CharField(max_length=20, default='STU2026')
+    student_id_prefix = models.CharField(max_length=20, default='STU')
+    current_count = models.IntegerField(default=0)
+    contact_email = models.EmailField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def generate_next_student_id(self):
+        self.current_count += 1
+        self.save()
+        if self.roll_prefix.endswith(self.code):
+            return f"{self.roll_prefix}{self.current_count:03d}"
+        return f"{self.roll_prefix}{self.code}{self.current_count:03d}"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
 class UserProfile(models.Model):
     ROLE_CHOICES = (
         ('STUDENT', 'Student Voter'),
         ('EVM', 'EVM Officer'),
+        ('CEO', 'Chief Election Officer'),
         ('ADMIN', 'System Administrator'),
-        ('CEO', 'Chief Election Officer'), # Backwards compatibility alias
     )
     ELIGIBILITY_CHOICES = (
         ('ELIGIBLE', 'Eligible'),
@@ -45,6 +65,11 @@ class UserProfile(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
     verification_status = models.CharField(max_length=20, choices=VERIFICATION_CHOICES, default='NOT_SUBMITTED')
     temporary_password = models.CharField(max_length=100, blank=True, null=True)
+
+    # Student Academic & Disciplinary Metadata for Election Eligibility Checks
+    cgpa = models.FloatField(default=8.5)
+    attendance = models.IntegerField(default=85)
+    disciplinary_clearance = models.BooleanField(default=True)
 
     # Multi-Factor Authentication (MFA) & Enterprise RBAC Fields
     mfa_enabled = models.BooleanField(default=False)
@@ -117,8 +142,47 @@ class Election(models.Model):
     camera_required = models.BooleanField(default=True)
     id_verification_required = models.BooleanField(default=True)
     rules = models.TextField(default="1. Controlled session required.\n2. Biometric and camera monitoring active.\n3. Ephemeral key ballot encryption.\n4. Single vote per verified voter.")
+    # Assigned Chief Election Officers (CEOs)
+    assigned_ceos = models.ManyToManyField(UserProfile, blank=True, related_name='assigned_elections')
+
+    # Advanced Institutional Eligibility Criteria
+    min_cgpa = models.FloatField(default=0.0)
+    min_attendance = models.IntegerField(default=75)
+    disciplinary_clearance_required = models.BooleanField(default=True)
+    dept_notifications_sent = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def check_student_eligibility(self, profile):
+        """Validates all academic, departmental, and disciplinary criteria for voter."""
+        # 1. Department match
+        if self.department != 'ALL':
+            allowed = [d.strip().lower() for d in self.department.split(',') if d.strip()]
+            if self.eligible_departments and self.eligible_departments != 'ALL':
+                allowed.extend([d.strip().lower() for d in self.eligible_departments.split(',') if d.strip()])
+            if profile.department.strip().lower() not in allowed and 'all' not in allowed:
+                return False, f"Department '{profile.department}' is not eligible (Eligible: {self.department})."
+
+        # 2. Year match
+        if self.eligible_years and self.eligible_years != 'ALL':
+            allowed_years = [y.strip() for y in self.eligible_years.split(',') if y.strip()]
+            if profile.year not in allowed_years and 'ALL' not in allowed_years:
+                return False, f"Academic Year {profile.year} is not eligible (Eligible: {self.eligible_years})."
+
+        # 3. CGPA check
+        if self.min_cgpa > 0 and getattr(profile, 'cgpa', 8.5) < self.min_cgpa:
+            return False, f"Minimum CGPA of {self.min_cgpa} required (Current CGPA: {getattr(profile, 'cgpa', 8.5)})."
+
+        # 4. Attendance check
+        if self.min_attendance > 0 and getattr(profile, 'attendance', 85) < self.min_attendance:
+            return False, f"Minimum attendance of {self.min_attendance}% required (Current: {getattr(profile, 'attendance', 85)}%)."
+
+        # 5. Disciplinary check
+        if self.disciplinary_clearance_required and not getattr(profile, 'disciplinary_clearance', True):
+            return False, "Active disciplinary infraction on institutional record. Voting privileges restricted."
+
+        return True, "Eligible"
 
     def is_within_voting_window(self):
         """
@@ -145,7 +209,9 @@ class Election(models.Model):
             window_end = now.replace(hour=end_parts[0], minute=end_parts[1], second=0, microsecond=0)
 
             if now < window_start or now > window_end:
-                return False, f"Student access is strictly restricted to 9:00 AM - 12:00 PM on election day (Current time: {now.strftime('%I:%M %p')}). Admin access is unrestricted."
+                fmt_start = window_start.strftime('%I:%M %p')
+                fmt_end = window_end.strftime('%I:%M %p')
+                return False, f"Student access is strictly restricted to {fmt_start} - {fmt_end} on election day (Current time: {now.strftime('%I:%M %p')}). Admin access is unrestricted."
         except Exception:
             pass
 
@@ -172,6 +238,7 @@ class Candidate(models.Model):
     profile_photo = models.TextField(blank=True, null=True)
     election_symbol = models.CharField(max_length=50, default='★')
     symbol_name = models.CharField(max_length=100, default='Star')
+    symbol_image = models.TextField(blank=True, null=True)  # JPEG / PNG Base64 or image URL
     biography = models.TextField(blank=True)
     manifesto = models.TextField(blank=True)
     priorities = models.TextField(blank=True, default='• Student Activities\n• Technical Events\n• Sports & Culture\n• Campus Facilities\n• Academic Mentorship')
@@ -373,6 +440,29 @@ class CampusNetworkPolicy(models.Model):
     voting_start_time = models.CharField(max_length=10, default='09:00')
     voting_end_time = models.CharField(max_length=10, default='16:00')
     updated_at = models.DateTimeField(auto_now=True)
+
+    def is_college_open(self):
+        """
+        Validates if current local time is within official college operating hours
+        (default 09:00 to 16:30). If college_hours enforcement is active,
+        voting server is locked outside college hours.
+        """
+        if not self.is_active:
+            return False, "Campus Gateway access is currently deactivated by Administrator."
+        if not self.election_access_required:
+            return True, "College hours enforcement is disabled by Administrator."
+
+        now = timezone.localtime(timezone.now()) if timezone.is_aware(timezone.now()) else timezone.now()
+        current_time_str = now.strftime("%H:%M")
+        
+        start = (self.voting_start_time or "09:00")[:5]
+        end = (self.voting_end_time or "16:30")[:5]
+
+        if current_time_str < start:
+            return False, f"College has not opened yet. Official college operating hours are {start} to {end}."
+        if current_time_str > end:
+            return False, f"College is closed. The voting server is offline after college hours ({start} to {end})."
+        return True, "College is in session and voting server is operational."
 
     def __str__(self):
         return f"Campus Network Policy ({self.ssid_name}) - {self.enforcement_mode}"

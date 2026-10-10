@@ -19,14 +19,11 @@ import {
 } from 'lucide-react';
 
 const ceoNavItems = [
-  { path: '/ceo/dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
-  { path: '/admin/elections', label: 'All Digital Ballots', icon: Vote },
-  { path: '/admin/students', label: 'Institutional Voters', icon: Users },
-  { path: '/admin/blockchain', label: 'Blockchain Core & Nodes', icon: HardDrive },
-  { path: '/admin/security-events', label: 'AI Fraud Radar', icon: ShieldAlert },
-  { path: '/admin/results/1', label: 'Live Tally & IRV', icon: Award },
-  { path: '/admin/audit-logs', label: 'Global Audit Trail', icon: FileCheck2 },
-  { path: '/evm-kiosk', label: 'EVM Kiosk Portal ↗', icon: ExternalLink, isExternal: true },
+  { path: '/ceo/dashboard', label: 'Executive Directorate', icon: LayoutDashboard },
+  { path: '/ceo/elections', label: 'Elections & Quorum Monitor', icon: Vote },
+  { path: '/ceo/certificates', label: 'Certificate Printing & Seals', icon: Award },
+  { path: '/results', label: 'Public Decentralized Tally', icon: FileCheck2 },
+  { path: '/evm-kiosk', label: 'EVM Kiosk Terminal ↗', icon: ExternalLink, isExternal: true },
 ];
 
 export function CEOSidebar() {

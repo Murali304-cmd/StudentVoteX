@@ -138,6 +138,9 @@ export default function EVMKiosk() {
   const [polledReceipt, setPolledReceipt] = useState(null);
   const [repollTimer, setRepollTimer] = useState(8);
 
+  // Institutional Hardwired LAN vs Wi-Fi Policy
+  const [networkMode, setNetworkMode] = useState('WIRED_LAN'); // 'WIRED_LAN' | 'WIFI_DEVICE' | 'AFTER_HOURS'
+
   // =========================================================================
   // 🔐 10 SECURITY FEATURES WHILE POLLING STATE ENGINE
   // =========================================================================
@@ -890,6 +893,7 @@ export default function EVMKiosk() {
       party: candidate.position || 'Student Representative',
       serialNo: String(index + 1).padStart(2, '0'),
       symbol: candidate.election_symbol || candidate.symbol || '★',
+      symbol_image: candidate.symbol_image || '',
       symbolName: candidate.symbol_name || 'Official Symbol',
       electionTitle: activeBallot.title,
       department: candidate.department || activeBallot.department || 'Campus-Wide',
@@ -1623,6 +1627,22 @@ export default function EVMKiosk() {
                   </div>
                   <div style={{
                     fontSize: '0.66rem',
+                    color: networkMode === 'WIRED_LAN' ? '#34d399' : '#f87171',
+                    background: networkMode === 'WIRED_LAN' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    border: networkMode === 'WIRED_LAN' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    <Server size={11} />
+                    <span>{networkMode === 'WIRED_LAN' ? 'HARDWIRED LAN: 10.10.4.12 • AIR-GAPPED' : 'WI-FI CONNECTED: BLOCKED'}</span>
+                  </div>
+                  <div style={{
+                    fontSize: '0.66rem',
                     color: '#38bdf8',
                     background: 'rgba(2, 132, 199, 0.12)',
                     border: '1px solid rgba(56, 189, 248, 0.3)',
@@ -1642,7 +1662,58 @@ export default function EVMKiosk() {
 
             {/* CU Retro Digital LCD Display & Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              
+              {/* Network Mode Simulator Pill for Defense/Testing */}
+              <div style={{ display: 'inline-flex', background: 'rgba(15, 23, 42, 0.95)', padding: '2px', borderRadius: '8px', border: '1px solid #334155' }}>
+                <button
+                  type="button"
+                  onClick={() => setNetworkMode('WIRED_LAN')}
+                  style={{
+                    padding: '5px 9px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: networkMode === 'WIRED_LAN' ? '#10b981' : 'transparent',
+                    color: networkMode === 'WIRED_LAN' ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  Hardwired LAN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNetworkMode('WIFI_DEVICE')}
+                  style={{
+                    padding: '5px 9px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: networkMode === 'WIFI_DEVICE' ? '#ef4444' : 'transparent',
+                    color: networkMode === 'WIFI_DEVICE' ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  Test Wi-Fi Block
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNetworkMode('AFTER_HOURS')}
+                  style={{
+                    padding: '5px 9px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: networkMode === 'AFTER_HOURS' ? '#f59e0b' : 'transparent',
+                    color: networkMode === 'AFTER_HOURS' ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  After Hours
+                </button>
+              </div>
+
               {/* 10 Security Features Button */}
               <button
                 type="button"
@@ -1864,10 +1935,86 @@ export default function EVMKiosk() {
         justifyContent: 'center'
       }}>
 
+        {/* INSTITUTIONAL SECURITY LOCKDOWN CURTAIN WHEN WI-FI OR AFTER-HOURS IS SIMULATED */}
+        {networkMode !== 'WIRED_LAN' && (
+          <div style={{
+            maxWidth: '680px',
+            width: '100%',
+            margin: '0 auto',
+            background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+            borderRadius: '24px',
+            padding: '8px',
+            border: networkMode === 'WIFI_DEVICE' ? '3px solid #ef4444' : '3px solid #f59e0b',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
+          }}>
+            <div style={{
+              background: '#090d16',
+              borderRadius: '18px',
+              padding: '32px 28px',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                background: networkMode === 'WIFI_DEVICE' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                border: networkMode === 'WIFI_DEVICE' ? '1px solid #ef4444' : '1px solid #f59e0b',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: networkMode === 'WIFI_DEVICE' ? '#f87171' : '#fbbf24',
+                marginBottom: '16px'
+              }}>
+                <ShieldAlert size={34} />
+              </div>
+
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#f8fafc', margin: 0 }}>
+                {networkMode === 'WIFI_DEVICE'
+                  ? 'INSTITUTIONAL LOCKDOWN: BALLOT CASTING BLOCKED ON WI-FI'
+                  : 'COLLEGE CLOSED: EVM TERMINAL OFFLINE AFTER WORKING HOURS'}
+              </h2>
+
+              <p style={{ fontSize: '0.84rem', color: '#94a3b8', margin: '10px 0 20px', lineHeight: 1.6 }}>
+                {networkMode === 'WIFI_DEVICE'
+                  ? 'Personal Mobile phones, Tablets, and Laptops connecting via Wi-Fi are strictly blocked from casting ballots. Official EVM polling terminals must operate exclusively on the Institutional Hardwired LAN.'
+                  : 'Voting operations have concluded for the day. EVM terminals are offline after official working hours (09:00 AM – 04:30 PM).'}
+              </p>
+
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.8)',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                marginBottom: '20px',
+                textAlign: 'left'
+              }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38bdf8', marginBottom: '4px' }}>
+                  PERIMETER DIRECTIVE
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#cbd5e1', lineHeight: 1.6 }}>
+                  • Station Hardware: <strong>DEV-EVM01-8F29A1 (CSE Lab 301)</strong><br />
+                  • Required Hardwire: <strong>Institutional LAN (10.10.4.12 Ethernet)</strong><br />
+                  • Active Wi-Fi Student: <strong>Muralidharan K (2024IT001)</strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setNetworkMode('WIRED_LAN')}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '12px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Server size={16} />
+                <span>Reconnect to Institutional Hardwired LAN (10.10.4.12)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ------------------------------------------------------------- */}
         {/* STAGE 1: FIRST ENTER ROLL NUMBER                              */}
         {/* ------------------------------------------------------------- */}
-        {stage === 'ENTER_ROLL_NO' && (
+        {networkMode === 'WIRED_LAN' && stage === 'ENTER_ROLL_NO' && (
           <div style={{
             maxWidth: '620px',
             width: '100%',
@@ -2627,9 +2774,14 @@ export default function EVMKiosk() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '1.3rem'
+                            fontSize: '1.3rem',
+                            overflow: 'hidden'
                           }}>
-                            {vvpatSlip.symbol}
+                            {vvpatSlip.symbol_image ? (
+                              <img src={vvpatSlip.symbol_image} alt="symbol" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            ) : (
+                              vvpatSlip.symbol
+                            )}
                           </div>
                         </div>
 
@@ -2812,9 +2964,14 @@ export default function EVMKiosk() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '1.4rem'
+                          fontSize: '1.4rem',
+                          overflow: 'hidden'
                         }}>
-                          {cand.election_symbol || cand.symbol || '★'}
+                          {cand.symbol_image ? (
+                            <img src={cand.symbol_image} alt={cand.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          ) : (
+                            cand.election_symbol || cand.symbol || '★'
+                          )}
                         </div>
                         <div style={{ fontSize: '0.52rem', color: isSelected ? '#cbd5e1' : '#64748b', marginTop: '2px', fontWeight: 800 }}>
                           {cand.symbol_name || 'Symbol'}

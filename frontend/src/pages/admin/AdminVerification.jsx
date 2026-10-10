@@ -160,25 +160,70 @@ export function AdminVerification() {
 
                 {/* ID Card Graphic / Preview */}
                 <div style={{
-                  background: '#f8fafc',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '10px',
-                  padding: '12px',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                  border: '1.5px solid var(--border-subtle)',
+                  borderRadius: '12px',
+                  padding: '10px',
                   marginBottom: '14px',
-                  textAlign: 'center'
+                  minHeight: '130px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.03)'
                 }}>
-                  {rec.id_card_image && rec.id_card_image.startsWith('data:image') ? (
-                    <img
-                      src={rec.id_card_image}
-                      alt="ID Card"
-                      style={{ maxWidth: '100%', maxHeight: '140px', borderRadius: '6px', objectFit: 'contain' }}
-                    />
-                  ) : (
-                    <div style={{ padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                      <FileCheck2 size={32} style={{ margin: '0 auto 6px', color: 'var(--cyan-primary)' }} />
-                      <div>Smart ID Document Registered</div>
+                  {/* High-Tech Institutional Digital ID Badge */}
+                  <div style={{
+                    width: '100%',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                    boxShadow: '0 2px 8px rgba(15,23,42,0.06)',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 900, color: '#0284c7', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        ABC INSTITUTION
+                      </div>
+                      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#10b981', background: '#ecfdf5', padding: '2px 8px', borderRadius: '999px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981' }}></span>
+                        SMART CARD ✓
+                      </div>
                     </div>
-                  )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '46px', height: '46px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.9rem', fontWeight: 800, flexShrink: 0,
+                        boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)'
+                      }}>
+                        {(rec.student_details?.full_name || 'ST').split(' ').map(n => n[0]).slice(0, 2).join('')}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {rec.student_details?.full_name || 'Registered Student'}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>
+                          Student ID: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0284c7' }}>{rec.student_details?.student_id || rec.extracted_id_number}</span>
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                          Dept: {rec.student_details?.department || 'Information Technology'}
+                        </div>
+                      </div>
+
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '8px',
+                        background: '#f8fafc', border: '1px solid #e2e8f0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#0284c7', fontSize: '0.6rem', fontWeight: 800, flexShrink: 0
+                      }}>
+                        RFID
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '3px' }}>

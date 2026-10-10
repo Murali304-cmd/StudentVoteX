@@ -7,7 +7,7 @@ from .views import (
     AdminVerificationListView, AdminVerificationReviewView, AdminAutoVerifyQRView,
     CampusGatewayCheckView, CampusNetworkPolicyView, DeviceRegistryListView,
     DeviceRegistryActionView, CampusNetworkTelemetryView,
-    ElectionListView, ElectionDetailView, CandidateListView,
+    ElectionListView, ElectionDetailView, CandidateListView, CandidateDetailView,
     VotingSessionInitView, CastVoteView,
     SecurityEventLogView, AdminSecurityEventListView,
     BlockchainStatsView, BlockchainBlocksView, BlockchainBlockDetailView,
@@ -19,8 +19,11 @@ from .views import (
     EVMVoterVerificationView,
     AdminEVMStationListView, AdminEVMStationDetailView,
     ElectionCertificatesView, StudentMyCertificatesView, PublicCertificateVerifyView,
+    StudentFaceEnrollmentView,
+    DepartmentListView, DepartmentGenerateStudentIdView, CEOAssignedElectionsView,
     # Enterprise Auth Endpoints
-    MFAEnrollView, MFAVerifyView, FIDO2VerifySimulatorView
+    MFAEnrollView, MFAVerifyView, FIDO2VerifySimulatorView,
+    InstitutionalSupportRequestView
 )
 
 urlpatterns = [
@@ -33,6 +36,7 @@ urlpatterns = [
     path('auth/mfa/enroll/', MFAEnrollView.as_view(), name='api-mfa-enroll'),
     path('auth/mfa/verify/', MFAVerifyView.as_view(), name='api-mfa-verify'),
     path('auth/mfa/fido2/', FIDO2VerifySimulatorView.as_view(), name='api-mfa-fido2'),
+    path('auth/support-request/', InstitutionalSupportRequestView.as_view(), name='api-support-request'),
 
     path('settings/', SystemSettingsView.as_view(), name='api-settings'),
     path('admin/settings/', SystemSettingsView.as_view(), name='api-admin-settings'),
@@ -48,9 +52,10 @@ urlpatterns = [
     path('admin/students/', AdminStudentListView.as_view(), name='admin-students'),
     path('admin/students/<int:pk>/', AdminStudentDetailView.as_view(), name='admin-student-detail'),
 
-    # ID Verification
+    # ID Verification & Biometric Face Registry
     path('student/id-verification/upload/', StudentIDVerificationUploadView.as_view(), name='student-id-upload'),
     path('student/id-verification/ocr-scan/', StudentIDOCRScanView.as_view(), name='student-ocr-scan'),
+    path('student/enroll-face/', StudentFaceEnrollmentView.as_view(), name='student-enroll-face'),
     path('admin/verifications/', AdminVerificationListView.as_view(), name='admin-verifications'),
     path('admin/verifications/auto-verify-qr/', AdminAutoVerifyQRView.as_view(), name='admin-verifications-auto-qr'),
     path('admin/verifications/<int:pk>/review/', AdminVerificationReviewView.as_view(), name='admin-verification-review'),
@@ -59,6 +64,7 @@ urlpatterns = [
     path('elections/', ElectionListView.as_view(), name='elections-list'),
     path('elections/<int:pk>/', ElectionDetailView.as_view(), name='election-detail'),
     path('candidates/', CandidateListView.as_view(), name='candidates-list'),
+    path('candidates/<int:pk>/', CandidateDetailView.as_view(), name='candidate-detail'),
 
     # Voting Engine
     path('voting/session-init/', VotingSessionInitView.as_view(), name='voting-session-init'),
@@ -96,4 +102,11 @@ urlpatterns = [
     path('evm/verify-voter/', EVMVoterVerificationView.as_view(), name='evm-verify-voter'),
     path('admin/evm-stations/', AdminEVMStationListView.as_view(), name='admin-evm-stations'),
     path('admin/evm-stations/<int:pk>/', AdminEVMStationDetailView.as_view(), name='admin-evm-station-detail'),
+
+    # Academic Department Management & Unique Roll ID Sequence
+    path('departments/', DepartmentListView.as_view(), name='departments-list'),
+    path('departments/generate-id/', DepartmentGenerateStudentIdView.as_view(), name='departments-generate-id'),
+
+    # Dedicated Chief Election Officer (CEO) Portal Routes
+    path('ceo/assigned-elections/', CEOAssignedElectionsView.as_view(), name='ceo-assigned-elections'),
 ]

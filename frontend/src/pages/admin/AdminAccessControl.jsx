@@ -24,7 +24,16 @@ import {
   Monitor,
   Terminal,
   Save,
-  Check
+  Check,
+  Smartphone,
+  Tablet,
+  Zap,
+  UserCheck,
+  Play,
+  CheckCircle,
+  Flame,
+  Shield,
+  WifiOff
 } from 'lucide-react';
 
 export function AdminAccessControl() {
@@ -36,8 +45,8 @@ export function AdminAccessControl() {
     enforcement_mode: 'DEVELOPMENT',
     is_active: true,
     election_access_required: true,
-    voting_start_time: '09:00:00',
-    voting_end_time: '16:00:00'
+    voting_start_time: '09:00',
+    voting_end_time: '16:30'
   });
   const [loading, setLoading] = useState(true);
   const [savingPolicy, setSavingPolicy] = useState(false);
@@ -45,6 +54,11 @@ export function AdminAccessControl() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Real-time Policy & Hardware Access Simulator State
+  const [activeScenario, setActiveScenario] = useState('EVM_LAN');
+  const [simulationResult, setSimulationResult] = useState(null);
+  const [simulating, setSimulating] = useState(false);
 
   // New device form state
   const [newDevice, setNewDevice] = useState({
@@ -118,6 +132,98 @@ export function AdminAccessControl() {
       loadGatewayData();
     } catch (err) {
       alert(`Policy update failed: ${err.message}`);
+    } finally {
+      setSavingPolicy(false);
+    }
+  };
+
+  const runScenarioSimulation = async (scenarioKey) => {
+    setActiveScenario(scenarioKey);
+    setSimulating(true);
+    try {
+      let payload = {};
+      if (scenarioKey === 'EVM_LAN') {
+        payload = {
+          role_target: 'EVM',
+          simulate_scenario: 'EVM_LAN',
+          connection_type: 'WIRED_LAN',
+          is_lan: true,
+          device_id: 'DEV-EVM01-8F29A1',
+          device_name: 'EVM-01 (CSE Lab 301)'
+        };
+      } else if (scenarioKey === 'WIFI_MOBILE') {
+        payload = {
+          role_target: 'BALLOT',
+          simulate_scenario: 'WIFI_MOBILE',
+          connection_type: 'WIFI',
+          is_wifi: true,
+          device_type: 'MOBILE',
+          student_id: 'STU2026001',
+          action: 'CAST_BALLOT'
+        };
+      } else if (scenarioKey === 'WIFI_LAPTOP') {
+        payload = {
+          role_target: 'BALLOT',
+          simulate_scenario: 'WIFI_LAPTOP',
+          connection_type: 'WIFI',
+          is_wifi: true,
+          device_type: 'LAPTOP_WIFI',
+          student_id: 'STU2026001',
+          action: 'CAST_BALLOT'
+        };
+      } else if (scenarioKey === 'AFTER_COLLEGE_HOURS') {
+        payload = {
+          role_target: 'STUDENT',
+          simulate_scenario: 'AFTER_COLLEGE_HOURS',
+          student_id: 'STU2026001'
+        };
+      } else if (scenarioKey === 'EXTERNAL_NETWORK') {
+        payload = {
+          role_target: 'STUDENT',
+          simulate_scenario: 'EXTERNAL_NETWORK',
+          connection_type: 'EXTERNAL_WAN',
+          student_id: 'STU2026001'
+        };
+      }
+      const res = await api.gateway.checkAccess(payload);
+      setSimulationResult({
+        key: scenarioKey,
+        status: res.status || 'GRANTED',
+        granted: res.access_granted,
+        message: res.message,
+        payload: res
+      });
+      loadGatewayData();
+    } catch (err) {
+      const errData = err.response?.data || { error: err.message };
+      setSimulationResult({
+        key: scenarioKey,
+        status: errData.status || 'BLOCKED',
+        granted: false,
+        message: errData.message || errData.error || 'Access Denied by Institutional Policy',
+        payload: errData
+      });
+      loadGatewayData();
+    } finally {
+      setSimulating(false);
+    }
+  };
+
+  const handleApplyQuickHours = async (start, end, enforce = true) => {
+    setSavingPolicy(true);
+    try {
+      const updated = await api.gateway.updatePolicy({
+        ...policy,
+        voting_start_time: start,
+        voting_end_time: end,
+        election_access_required: enforce
+      });
+      setPolicy(updated);
+      setPolicySuccess(true);
+      setTimeout(() => setPolicySuccess(false), 3000);
+      loadGatewayData();
+    } catch (e) {
+      alert(`Hours update failed: ${e.message}`);
     } finally {
       setSavingPolicy(false);
     }
@@ -297,6 +403,85 @@ export function AdminAccessControl() {
         </div>
       </div>
 
+      {/* College Working Hours Live Control Ribbon */}
+      <div
+        className="glass-card"
+        style={{
+          padding: '16px 20px',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '14px',
+          borderLeft: policy.is_active && (telemetry?.college_open !== false) ? '4px solid #10b981' : '4px solid #f59e0b',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
+          color: '#f8fafc'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              padding: '10px',
+              borderRadius: '12px',
+              background: policy.is_active && (telemetry?.college_open !== false) ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+              color: policy.is_active && (telemetry?.college_open !== false) ? '#34d399' : '#fbbf24'
+            }}
+          >
+            <Clock size={22} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.96rem', color: '#f8fafc' }}>
+                COLLEGE OPERATING HOURS POLICY
+              </span>
+              <span
+                className={`badge ${policy.is_active && (telemetry?.college_open !== false) ? 'badge-emerald' : 'badge-amber'}`}
+                style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+              >
+                {policy.is_active && (telemetry?.college_open !== false) ? '● SERVER ONLINE (COLLEGE OPEN)' : '● SERVER LOCKED (COLLEGE CLOSED)'}
+              </span>
+            </div>
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+              Authorized Election Window: <strong style={{ color: '#38bdf8' }}>{policy.voting_start_time.substring(0, 5)} - {policy.voting_end_time.substring(0, 5)}</strong>. Voting server is strictly closed outside college hours.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => handleApplyQuickHours('09:00', '16:30', true)}
+            disabled={savingPolicy}
+            className="btn btn-sm btn-secondary"
+            style={{ fontSize: '0.74rem', padding: '6px 12px' }}
+          >
+            <Clock size={13} />
+            <span>Standard College Hours (09:00 - 16:30)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleApplyQuickHours('09:00', '12:00', true)}
+            disabled={savingPolicy}
+            className="btn btn-sm btn-secondary"
+            style={{ fontSize: '0.74rem', padding: '6px 12px' }}
+          >
+            <Lock size={13} />
+            <span>Morning Only (09:00 - 12:00)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleApplyQuickHours('00:00', '23:59', false)}
+            disabled={savingPolicy}
+            className="btn btn-sm btn-secondary"
+            style={{ fontSize: '0.74rem', padding: '6px 12px' }}
+          >
+            <Unlock size={13} />
+            <span>All-Day 24/7 Access (Override)</span>
+          </button>
+        </div>
+      </div>
+
       {/* Interactive Visual Realtime Campus Network Architecture Map */}
       <div
         className="glass-card"
@@ -320,7 +505,7 @@ export function AdminAccessControl() {
                 Live Campus Network Perimeter & Hardware Mesh
               </h2>
               <div style={{ fontSize: '0.74rem', color: '#38bdf8' }}>
-                Server-side CIDR subnet filter • Continuous BFT consensus witness node monitoring
+                Wired LAN EVM Terminals vs. Campus Wi-Fi Endpoints • Active Student Voter Verification
               </div>
             </div>
           </div>
@@ -328,11 +513,15 @@ export function AdminAccessControl() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.74rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-              <span style={{ color: '#cbd5e1' }}>Campus Subnet (Verified)</span>
+              <span style={{ color: '#cbd5e1' }}>Institutional Hardwired LAN (Allowed)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8' }} />
+              <span style={{ color: '#cbd5e1' }}>Campus Wi-Fi (Portal Only, Ballot Blocked)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 8px #ef4444' }} />
-              <span style={{ color: '#cbd5e1' }}>External / Rogue Subnet (Blocked)</span>
+              <span style={{ color: '#cbd5e1' }}>External Subnet (Blocked)</span>
             </div>
           </div>
         </div>
@@ -368,7 +557,7 @@ export function AdminAccessControl() {
                 <span>STUDENTVOICEX CAMPUS GATEWAY</span>
               </div>
               <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
-                SSID: <strong style={{ color: '#f8fafc' }}>{policy.ssid_name}</strong> • Subnet Rules: <strong style={{ color: '#34d399' }}>STRICT CIDR MESH</strong>
+                SSID: <strong style={{ color: '#f8fafc' }}>{policy.ssid_name}</strong> • Subnet Policy: <strong style={{ color: '#34d399' }}>LAN EVM EXCLUSIVE FOR BALLOT</strong>
               </div>
             </div>
           </div>
@@ -377,20 +566,20 @@ export function AdminAccessControl() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
               gap: '16px',
               position: 'relative',
               zIndex: 2
             }}
           >
-            {/* Node 1: EVM Lab 1 */}
+            {/* Node 1: EVM Lab 1 (Hardwired LAN) */}
             <div
               style={{
                 background: 'rgba(15, 23, 42, 0.85)',
-                border: '1px solid rgba(16, 185, 129, 0.5)',
+                border: '1.5px solid rgba(16, 185, 129, 0.6)',
                 borderRadius: '12px',
                 padding: '14px',
-                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.15)'
+                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -398,22 +587,25 @@ export function AdminAccessControl() {
                   <Monitor size={16} color="#34d399" />
                   <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#f8fafc' }}>EVM-01</span>
                 </div>
-                <span className="badge badge-emerald" style={{ fontSize: '0.66rem' }}>TRUSTED</span>
+                <span className="badge badge-emerald" style={{ fontSize: '0.66rem' }}>HARDWIRED LAN</span>
               </div>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>CSE Lab 301 (Voter Kiosk)</div>
-              <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#38bdf8', marginTop: '4px' }}>
-                IP: 10.10.4.12 • Latency: 2ms
+              <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#34d399', marginTop: '4px' }}>
+                IP: 10.10.4.12 • Latency: 1ms
+              </div>
+              <div style={{ fontSize: '0.66rem', color: '#10b981', fontWeight: 700, marginTop: '4px' }}>
+                ✓ Ballot Casting: UNLOCKED
               </div>
             </div>
 
-            {/* Node 2: EVM Lab 2 */}
+            {/* Node 2: EVM Lab 2 (Hardwired LAN) */}
             <div
               style={{
                 background: 'rgba(15, 23, 42, 0.85)',
-                border: '1px solid rgba(16, 185, 129, 0.5)',
+                border: '1.5px solid rgba(16, 185, 129, 0.6)',
                 borderRadius: '12px',
                 padding: '14px',
-                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.15)'
+                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -421,11 +613,14 @@ export function AdminAccessControl() {
                   <Monitor size={16} color="#34d399" />
                   <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#f8fafc' }}>EVM-02</span>
                 </div>
-                <span className="badge badge-emerald" style={{ fontSize: '0.66rem' }}>TRUSTED</span>
+                <span className="badge badge-emerald" style={{ fontSize: '0.66rem' }}>HARDWIRED LAN</span>
               </div>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Auditorium Hall Kiosk</div>
-              <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#38bdf8', marginTop: '4px' }}>
-                IP: 10.10.4.15 • Latency: 3ms
+              <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#34d399', marginTop: '4px' }}>
+                IP: 10.10.4.15 • Latency: 2ms
+              </div>
+              <div style={{ fontSize: '0.66rem', color: '#10b981', fontWeight: 700, marginTop: '4px' }}>
+                ✓ Ballot Casting: UNLOCKED
               </div>
             </div>
 
@@ -450,32 +645,41 @@ export function AdminAccessControl() {
               <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#38bdf8', marginTop: '4px' }}>
                 IP: 10.10.1.5 • Latency: 1ms
               </div>
+              <div style={{ fontSize: '0.66rem', color: '#818cf8', fontWeight: 700, marginTop: '4px' }}>
+                Admin Portal: ACTIVE
+              </div>
             </div>
 
-            {/* Node 4: Student BYOD Cluster */}
+            {/* Node 4: Muralidharan K - Active Verified Student on WiFi */}
             <div
               style={{
-                background: 'rgba(15, 23, 42, 0.85)',
-                border: '1px solid rgba(56, 189, 248, 0.4)',
+                background: 'linear-gradient(135deg, rgba(14, 116, 144, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%)',
+                border: '1.5px solid #38bdf8',
                 borderRadius: '12px',
                 padding: '14px',
-                boxShadow: '0 4px 16px rgba(56, 189, 248, 0.15)'
+                boxShadow: '0 0 20px rgba(56, 189, 248, 0.25)',
+                position: 'relative'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Wifi size={16} color="#38bdf8" />
-                  <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#f8fafc' }}>STUDENT BYOD</span>
+                  <UserCheck size={16} color="#38bdf8" />
+                  <span style={{ fontWeight: 900, fontSize: '0.84rem', color: '#f8fafc' }}>Muralidharan K</span>
                 </div>
-                <span className="badge badge-cyan" style={{ fontSize: '0.66rem' }}>PERMITTED</span>
+                <span className="badge badge-cyan" style={{ fontSize: '0.66rem' }}>ACTIVE VOTER</span>
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Campus WiFi Subnet</div>
-              <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#38bdf8', marginTop: '4px' }}>
-                Subnet: 172.16.0.0/12 • Active
+              <div style={{ fontSize: '0.72rem', color: '#cbd5e1' }}>
+                Roll: <strong style={{ color: '#38bdf8' }}>2024IT001</strong> • IT 3rd Year
+              </div>
+              <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#94a3b8', marginTop: '4px' }}>
+                WiFi IP: 172.16.4.88 • SSID: {policy.ssid_name}
+              </div>
+              <div style={{ fontSize: '0.66rem', color: '#f87171', fontWeight: 700, marginTop: '4px' }}>
+                ⚠ WiFi Ballot: BLOCKED (EVM Required)
               </div>
             </div>
 
-            {/* Node 5: External Rogue IP */}
+            {/* Node 5: External Rogue Subnet */}
             <div
               style={{
                 background: 'rgba(30, 10, 15, 0.85)',
@@ -492,13 +696,251 @@ export function AdminAccessControl() {
                 </div>
                 <span className="badge badge-rose" style={{ fontSize: '0.66rem' }}>BLOCKED</span>
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Public Internet Off-Campus</div>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Off-Campus Public Internet</div>
               <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#ef4444', marginTop: '4px' }}>
                 IP: 198.51.100.44 • Rejected
+              </div>
+              <div style={{ fontSize: '0.66rem', color: '#f87171', fontWeight: 700, marginTop: '4px' }}>
+                Zero Egress Allowed
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Real-Time Hardware & Network Policy Simulator (Live Test Bench) */}
+      <div
+        className="glass-card"
+        style={{
+          padding: '24px',
+          marginBottom: '24px',
+          background: 'linear-gradient(135deg, #0b1120 0%, #111827 100%)',
+          border: '1.5px solid rgba(99, 102, 241, 0.35)',
+          color: '#f8fafc'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)', padding: '8px', borderRadius: '10px', color: '#fff' }}>
+              <Zap size={18} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+                Real-Time Hardware & Network Policy Simulator
+              </h2>
+              <div style={{ fontSize: '0.74rem', color: '#a5b4fc' }}>
+                Test and verify: Hardwired EVM Terminal (Allowed) vs. Student Mobile/Laptop Wi-Fi (Blocked) vs. After Hours (Closed).
+              </div>
+            </div>
+          </div>
+          <span className="badge badge-indigo" style={{ fontSize: '0.7rem' }}>LIVE BACKEND VERIFICATION</span>
+        </div>
+
+        {/* 4 Interactive Test Bench Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+          {/* Action 1: EVM Hardwired LAN */}
+          <button
+            type="button"
+            onClick={() => runScenarioSimulation('EVM_LAN')}
+            disabled={simulating}
+            className="btn"
+            style={{
+              padding: '14px',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              background: activeScenario === 'EVM_LAN' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.7)',
+              border: activeScenario === 'EVM_LAN' ? '1.5px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              color: '#f8fafc',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '0.82rem', color: '#34d399' }}>
+                <Monitor size={15} />
+                <span>1. Hardwired EVM Terminal</span>
+              </div>
+              <span className="badge badge-emerald" style={{ fontSize: '0.62rem' }}>EXPECT: ALLOWED</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              Hardwired Institutional LAN (10.10.4.12)
+            </div>
+          </button>
+
+          {/* Action 2: Student Mobile WiFi */}
+          <button
+            type="button"
+            onClick={() => runScenarioSimulation('WIFI_MOBILE')}
+            disabled={simulating}
+            className="btn"
+            style={{
+              padding: '14px',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              background: activeScenario === 'WIFI_MOBILE' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.7)',
+              border: activeScenario === 'WIFI_MOBILE' ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              color: '#f8fafc',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '0.82rem', color: '#f87171' }}>
+                <Smartphone size={15} />
+                <span>2. Student Mobile on Wi-Fi</span>
+              </div>
+              <span className="badge badge-rose" style={{ fontSize: '0.62rem' }}>EXPECT: BLOCKED</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              Muralidharan K via COLLEGE_WIFI (172.16.4.88)
+            </div>
+          </button>
+
+          {/* Action 3: Student Laptop WiFi */}
+          <button
+            type="button"
+            onClick={() => runScenarioSimulation('WIFI_LAPTOP')}
+            disabled={simulating}
+            className="btn"
+            style={{
+              padding: '14px',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              background: activeScenario === 'WIFI_LAPTOP' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.7)',
+              border: activeScenario === 'WIFI_LAPTOP' ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              color: '#f8fafc',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '0.82rem', color: '#f87171' }}>
+                <Laptop size={15} />
+                <span>3. Student Laptop on Wi-Fi</span>
+              </div>
+              <span className="badge badge-rose" style={{ fontSize: '0.62rem' }}>EXPECT: BLOCKED</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              Personal BYOD Laptop on Wireless Subnet
+            </div>
+          </button>
+
+          {/* Action 4: After College Hours */}
+          <button
+            type="button"
+            onClick={() => runScenarioSimulation('AFTER_COLLEGE_HOURS')}
+            disabled={simulating}
+            className="btn"
+            style={{
+              padding: '14px',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              background: activeScenario === 'AFTER_COLLEGE_HOURS' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(15, 23, 42, 0.7)',
+              border: activeScenario === 'AFTER_COLLEGE_HOURS' ? '1.5px solid #f59e0b' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              color: '#f8fafc',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '0.82rem', color: '#fbbf24' }}>
+                <Clock size={15} />
+                <span>4. After College Hours</span>
+              </div>
+              <span className="badge badge-amber" style={{ fontSize: '0.62rem' }}>EXPECT: CLOSED</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              Voting Session Attempt Outside College Hours
+            </div>
+          </button>
+
+          {/* Action 5: External / Off-Campus Network */}
+          <button
+            type="button"
+            onClick={() => runScenarioSimulation('EXTERNAL_NETWORK')}
+            disabled={simulating}
+            className="btn"
+            style={{
+              padding: '14px',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              background: activeScenario === 'EXTERNAL_NETWORK' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.7)',
+              border: activeScenario === 'EXTERNAL_NETWORK' ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              color: '#f8fafc',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '0.82rem', color: '#f87171' }}>
+                <WifiOff size={15} />
+                <span>5. External Network (Home/Hotspot)</span>
+              </div>
+              <span className="badge badge-rose" style={{ fontSize: '0.62rem' }}>EXPECT: BLOCKED</span>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              Home Wi-Fi, 4G/5G Hotspot (Off-Campus)
+            </div>
+          </button>
+        </div>
+
+        {/* Live Simulation Response Terminal Box */}
+        {simulationResult && (
+          <div
+            style={{
+              background: 'rgba(2, 6, 23, 0.9)',
+              border: simulationResult.granted ? '1.5px solid #10b981' : simulationResult.status === 'COLLEGE_CLOSED' ? '1.5px solid #f59e0b' : '1.5px solid #ef4444',
+              borderRadius: '12px',
+              padding: '16px',
+              animation: 'fadeIn 0.3s ease'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {simulationResult.granted ? (
+                  <CheckCircle size={18} color="#34d399" />
+                ) : (
+                  <ShieldAlert size={18} color="#f87171" />
+                )}
+                <span style={{ fontWeight: 800, fontSize: '0.88rem', color: simulationResult.granted ? '#34d399' : '#f87171' }}>
+                  GATEWAY VERIFICATION RESULT: {simulationResult.status}
+                </span>
+              </div>
+              <span className="badge badge-slate" style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)' }}>
+                SIEM SECURITY AUDIT LOGGED
+              </span>
+            </div>
+
+            <div style={{ fontSize: '0.82rem', color: '#e2e8f0', marginBottom: '10px', lineHeight: 1.5 }}>
+              {simulationResult.message}
+            </div>
+
+            <pre
+              style={{
+                background: 'rgba(0, 0, 0, 0.5)',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '0.74rem',
+                color: '#94a3b8',
+                fontFamily: 'var(--font-mono)',
+                margin: 0,
+                overflowX: 'auto'
+              }}
+            >
+              {JSON.stringify(simulationResult.payload, null, 2)}
+            </pre>
+          </div>
+        )}
       </div>
 
       {/* 2-Column Split: Device Registry (Left 65%) + Network Policy Configuration (Right 35%) */}

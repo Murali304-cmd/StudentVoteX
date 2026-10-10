@@ -22,7 +22,9 @@ import {
   GitFork,
   HelpCircle,
   Copy,
-  Check
+  Check,
+  Trash2,
+  Link2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '../../services/api';
@@ -55,6 +57,39 @@ export function AdminBlocks() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const autoMineTimerRef = useRef(null);
+  const [deletingBlockIndex, setDeletingBlockIndex] = useState(null);
+  const [healAlertMessage, setHealAlertMessage] = useState('');
+
+  const handleDeleteAndHealBlock = async (blockIndex, e) => {
+    if (e) e.stopPropagation();
+    if (blockIndex === 0) {
+      alert("Genesis Root Block #0 cannot be deleted. It serves as the immutable anchor for the blockchain.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Exacting Block #${blockIndex} Deletion:\n\nAre you sure you want to delete Block #${blockIndex}?\n\nThe VotaNova BFT Engine will automatically HEAL the blockchain by re-linking the previous_hash of Block #${blockIndex + 1} to Block #${blockIndex - 1} and recomputing all cryptographic hashes.`
+    );
+    if (!confirmed) return;
+
+    setDeletingBlockIndex(blockIndex);
+    try {
+      const res = await api.blockchain.deleteBlock(blockIndex);
+      setHealAlertMessage(
+        res.message || `✓ Block #${blockIndex} successfully excised! Blockchain auto-healed: subsequent blocks re-linked seamlessly.`
+      );
+      if (selectedBlock?.index === blockIndex) {
+        setSelectedBlock(null);
+      }
+      await fetchBlocks();
+      audioFX.playChainValidated?.();
+      setTimeout(() => setHealAlertMessage(''), 7000);
+    } catch (err) {
+      alert(err.message || 'Error deleting and healing block.');
+    } finally {
+      setDeletingBlockIndex(null);
+    }
+  };
 
   const initialBlocks = [
     {
@@ -240,6 +275,26 @@ export function AdminBlocks() {
 
       {/* Persistent Blockchain Ribbon Strip */}
       <BlockchainVisualizer onSelectBlock={(b) => setSelectedBlock(b)} selectedBlockIndex={selectedBlock?.index} />
+
+      {healAlertMessage && (
+        <div style={{
+          background: 'rgba(16, 185, 129, 0.15)',
+          border: '1.5px solid #10b981',
+          borderRadius: '12px',
+          padding: '12px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          color: '#34d399',
+          fontWeight: 700,
+          fontSize: '0.86rem',
+          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)'
+        }}>
+          <Link2 size={20} />
+          <span>{healAlertMessage}</span>
+        </div>
+      )}
 
       {/* ----------------- Top Header & Mining Controls ----------------- */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '22px', flexWrap: 'wrap', gap: '16px' }}>
@@ -562,6 +617,34 @@ export function AdminBlocks() {
                       {block.transactions_count || block.transactions?.length || 24} TX
                     </div>
                   </div>
+
+                  {block.index > 0 && (
+                    <button
+                      type="button"
+                      disabled={deletingBlockIndex === block.index}
+                      onClick={(e) => handleDeleteAndHealBlock(block.index, e)}
+                      title="Excise this block and auto-heal the hash chain (re-link adjacent blocks)"
+                      style={{
+                        padding: '6px 11px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(244, 63, 94, 0.45)',
+                        background: 'rgba(244, 63, 94, 0.12)',
+                        color: '#fb7185',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(244, 63, 94, 0.28)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(244, 63, 94, 0.12)'; }}
+                    >
+                      <Trash2 size={13} />
+                      <span>{deletingBlockIndex === block.index ? 'Healing...' : 'Delete & Heal'}</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"

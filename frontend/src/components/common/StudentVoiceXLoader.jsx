@@ -1,40 +1,62 @@
 import React from 'react';
-import { StudentVoiceXLogo } from '../StudentVoiceXLogo';
 
 /**
- * StudentVoiceXLoader - Ultra-Premium Futuristic Zoom In & Out Brand Loader
+ * StudentVoiceXLoader - Simple, Elegant Centered Circle Rolling Spinner
+ * 
  * Features:
- * - Dynamic breathing Zoom In & Out animation on the official StudentVoiceX monogram
- * - Luminous cybernetic pulse wave rings radiating behind the logo
- * - Shimmer gradient loading typography with dynamic status updates
- * - Supports modes: 'fullscreen', 'card', 'inline', and 'compact'
+ * - 100% Dead-Center Alignment: Vertically and horizontally centered at all times.
+ * - Simple Circle Rolling: Pure, lightweight circular spinner ring with smooth rotation.
+ * - Clean Background: Zero heavy cards, zero dark overlays, zero cluttered HUD boxes.
  */
 export function StudentVoiceXLoader({
-  label = 'Loading StudentVoiceX...',
-  sublabel = 'Syncing BFT Consensus & Cryptographic Integrity...',
-  size = 64,
+  label = 'Loading...',
+  sublabel = null,
+  size = 46,
   mode = 'card', // 'fullscreen' | 'card' | 'inline' | 'compact'
-  isDark = false,
-  showTagline = true
+  minHeight = null,
+  isDark = false
 }) {
-  if (mode === 'compact') {
+  const spinnerSize = size || 46;
+  const strokeWidth = Math.max(3, Math.round(spinnerSize * 0.08));
+
+  // Spinner Circle Element
+  const renderCircleSpinner = (customSize = spinnerSize, customStroke = strokeWidth) => (
+    <div
+      className="svx-circle-roller"
+      style={{
+        width: `${customSize}px`,
+        height: `${customSize}px`,
+        borderWidth: `${customStroke}px`,
+        borderStyle: 'solid',
+        borderColor: isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(2, 132, 199, 0.16)',
+        borderTopColor: '#0284c7',
+        borderRightColor: '#38bdf8',
+        borderRadius: '50%',
+        flexShrink: 0
+      }}
+    />
+  );
+
+  // 1. Compact / Inline Mode (Buttons, chips, small badges)
+  if (mode === 'compact' || mode === 'inline') {
     return (
       <div
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '6px 12px',
+          justifyContent: 'center',
+          gap: '8px',
           userSelect: 'none'
         }}
       >
-        <div className="svx-zoom-in-out" style={{ display: 'inline-flex' }}>
-          <StudentVoiceXLogo size={size || 28} showText={false} isDark={isDark} />
-        </div>
+        {renderCircleSpinner(size || 20, 2.5)}
         {label && (
           <span
-            className="svx-shimmer-text"
-            style={{ fontSize: '0.82rem', letterSpacing: '0.02em' }}
+            style={{
+              fontSize: '0.84rem',
+              fontWeight: 600,
+              color: isDark ? '#cbd5e1' : '#475569'
+            }}
           >
             {label}
           </span>
@@ -43,145 +65,63 @@ export function StudentVoiceXLoader({
     );
   }
 
+  // 2. Fullscreen Mode (Strictly centered on screen with minimal transparent backdrop)
   if (mode === 'fullscreen') {
     return (
       <div
         style={{
           position: 'fixed',
-          inset: 0,
-          background: isDark
-            ? 'linear-gradient(135deg, #070b14 0%, #0b1120 50%, #0f172a 100%)'
-            : 'linear-gradient(135deg, rgba(248, 250, 252, 0.96) 0%, rgba(241, 245, 249, 0.94) 50%, rgba(224, 231, 255, 0.92) 100%)',
-          backdropFilter: 'blur(16px)',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          background: isDark ? 'rgba(15, 23, 42, 0.55)' : 'rgba(255, 255, 255, 0.65)',
+          backdropFilter: 'blur(3px)',
+          WebkitBackdropFilter: 'blur(3px)',
           zIndex: 99999,
-          padding: '24px',
-          userSelect: 'none'
+          userSelect: 'none',
+          boxSizing: 'border-box',
+          padding: '20px'
         }}
       >
-        {/* Luminous Center Ambient Glow */}
-        <div
-          style={{
-            position: 'absolute',
-            width: '320px',
-            height: '320px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(168, 85, 247, 0.12) 50%, transparent 70%)',
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* Outer Pulsing Wave Ring */}
-        <div
-          className="svx-pulse-ring"
-          style={{
-            position: 'absolute',
-            width: `${size * 2.2}px`,
-            height: `${size * 2.2}px`,
-            borderRadius: '50%',
-            border: '2px solid rgba(56, 189, 248, 0.4)',
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* Second Delayed Wave Ring */}
-        <div
-          className="svx-pulse-ring"
-          style={{
-            position: 'absolute',
-            width: `${size * 2.8}px`,
-            height: `${size * 2.8}px`,
-            borderRadius: '50%',
-            border: '1.5px solid rgba(168, 85, 247, 0.35)',
-            animationDelay: '0.8s',
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* Main Brand Logo with Zoom In and Out Animation */}
-        <div
-          className="svx-zoom-in-out"
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '20px'
-          }}
-        >
-          <StudentVoiceXLogo
-            size={size || 80}
-            showText={false}
-            isDark={isDark}
-          />
-        </div>
-
-        {/* Shimmer Typography */}
-        <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+        {renderCircleSpinner()}
+        {label && (
           <div
             style={{
-              fontSize: '1.25rem',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              color: isDark ? '#ffffff' : '#0f172a',
-              marginBottom: '4px'
-            }}
-          >
-            <span>StudentVoice</span>
-            <span
-              style={{
-                background: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 40%, #a855f7 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 900,
-                marginLeft: '1px'
-              }}
-            >
-              X
-            </span>
-          </div>
-
-          <div
-            className="svx-shimmer-text"
-            style={{
-              fontSize: '0.88rem',
-              letterSpacing: '0.04em',
-              marginBottom: '4px'
+              marginTop: '16px',
+              fontSize: '0.94rem',
+              fontWeight: 600,
+              color: isDark ? '#f1f5f9' : '#1e293b',
+              letterSpacing: '0.01em',
+              textAlign: 'center'
             }}
           >
             {label}
           </div>
-
-          {sublabel && (
-            <div style={{ fontSize: '0.74rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-              {sublabel}
-            </div>
-          )}
-
-          {showTagline && (
-            <div
-              style={{
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                color: '#0284c7',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                marginTop: '12px'
-              }}
-            >
-              "Your Voice Builds Tomorrow." • ABC Institution
-            </div>
-          )}
-        </div>
+        )}
+        {sublabel && (
+          <div
+            style={{
+              marginTop: '4px',
+              fontSize: '0.8rem',
+              color: isDark ? '#94a3b8' : '#64748b',
+              textAlign: 'center'
+            }}
+          >
+            {sublabel}
+          </div>
+        )}
       </div>
     );
   }
 
-  // Default: Card / In-page Container Mode
+  // 3. Card / Default In-Page Mode (Centered horizontally & vertically with transparent background)
   return (
     <div
       style={{
@@ -189,73 +129,42 @@ export function StudentVoiceXLoader({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '36px 20px',
-        position: 'relative',
+        width: '100%',
+        minHeight: minHeight || '320px',
+        margin: 'auto',
+        background: 'transparent',
         userSelect: 'none',
-        width: '100%'
+        boxSizing: 'border-box',
+        padding: '24px'
       }}
     >
-      {/* Background Pulsing Halo */}
-      <div
-        style={{
-          position: 'absolute',
-          width: `${size * 1.8}px`,
-          height: `${size * 1.8}px`,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, rgba(168, 85, 247, 0.08) 60%, transparent 80%)',
-          pointerEvents: 'none'
-        }}
-      />
-
-      {/* Outer Pulse Ring */}
-      <div
-        className="svx-pulse-ring"
-        style={{
-          position: 'absolute',
-          width: `${size * 1.6}px`,
-          height: `${size * 1.6}px`,
-          borderRadius: '50%',
-          border: '1.5px solid rgba(56, 189, 248, 0.3)',
-          pointerEvents: 'none'
-        }}
-      />
-
-      {/* Zoom In and Out Animated Brand Monogram */}
-      <div
-        className="svx-zoom-in-out"
-        style={{
-          position: 'relative',
-          zIndex: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '14px'
-        }}
-      >
-        <StudentVoiceXLogo
-          size={size || 56}
-          showText={false}
-          isDark={isDark}
-        />
-      </div>
-
-      {/* Shimmer Label */}
-      <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+      {renderCircleSpinner()}
+      {label && (
         <div
-          className="svx-shimmer-text"
           style={{
-            fontSize: '0.86rem',
-            letterSpacing: '0.03em'
+            marginTop: '14px',
+            fontSize: '0.92rem',
+            fontWeight: 600,
+            color: isDark ? '#e2e8f0' : '#334155',
+            letterSpacing: '0.01em',
+            textAlign: 'center'
           }}
         >
           {label}
         </div>
-        {sublabel && (
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {sublabel}
-          </div>
-        )}
-      </div>
+      )}
+      {sublabel && (
+        <div
+          style={{
+            marginTop: '4px',
+            fontSize: '0.78rem',
+            color: isDark ? '#94a3b8' : '#64748b',
+            textAlign: 'center'
+          }}
+        >
+          {sublabel}
+        </div>
+      )}
     </div>
   );
 }

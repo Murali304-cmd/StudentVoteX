@@ -3,8 +3,16 @@ from django.contrib.auth.models import User
 from .models import (
     UserProfile, IDVerificationRecord, Election, Candidate,
     VoterEligibilityRecord, AnonymousVotingToken, SecurityEvent, AuditLog,
-    Notification, CampusNetworkPolicy, DeviceRegistry, ElectionCertificate
+    Notification, CampusNetworkPolicy, DeviceRegistry, ElectionCertificate,
+    Department
 )
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = ['id', 'code', 'name', 'roll_prefix', 'student_id_prefix', 'current_count', 'contact_email', 'created_at']
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
@@ -16,7 +24,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'role', 'student_id', 'roll_number', 'full_name',
             'department', 'year', 'section', 'phone', 'profile_photo',
             'id_card_number', 'id_card_hash', 'id_card_qr_ref', 'eligibility',
-            'status', 'verification_status', 'temporary_password', 'mfa_enabled',
+            'status', 'verification_status', 'temporary_password', 'cgpa',
+            'attendance', 'disciplinary_clearance', 'mfa_enabled',
             'hardware_key_registered', 'created_at', 'updated_at'
         ]
 
@@ -29,13 +38,14 @@ class CandidateSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'candidate_id', 'election', 'election_title', 'name',
             'position', 'department', 'year', 'section', 'profile_photo',
-            'election_symbol', 'symbol_name', 'biography', 'manifesto',
+            'election_symbol', 'symbol_name', 'symbol_image', 'biography', 'manifesto',
             'priorities', 'status', 'vote_count', 'created_at'
         ]
 
 
 class ElectionSerializer(serializers.ModelSerializer):
     candidates = CandidateSerializer(many=True, read_only=True)
+    assigned_ceos_details = UserProfileSerializer(source='assigned_ceos', many=True, read_only=True)
     total_votes = serializers.SerializerMethodField()
     eligible_voter_count = serializers.SerializerMethodField()
     positions = serializers.SerializerMethodField()
@@ -47,6 +57,8 @@ class ElectionSerializer(serializers.ModelSerializer):
             'eligible_departments', 'eligible_years', 'start_date', 'end_date',
             'daily_start_time', 'daily_end_time', 'voting_hours_enforced', 'status',
             'camera_required', 'id_verification_required', 'rules',
+            'assigned_ceos', 'assigned_ceos_details',
+            'min_cgpa', 'min_attendance', 'disciplinary_clearance_required', 'dept_notifications_sent',
             'created_at', 'updated_at', 'candidates', 'total_votes', 'eligible_voter_count',
             'positions'
         ]
@@ -105,12 +117,19 @@ class AuditLogSerializer(serializers.ModelSerializer):
 
 
 class CampusNetworkPolicySerializer(serializers.ModelSerializer):
+    is_college_open = serializers.SerializerMethodField()
+
     class Meta:
         model = CampusNetworkPolicy
         fields = [
             'id', 'ssid_name', 'allowed_cidrs', 'enforcement_mode', 'is_active',
-            'election_access_required', 'voting_start_time', 'voting_end_time', 'updated_at'
+            'election_access_required', 'voting_start_time', 'voting_end_time', 'updated_at',
+            'is_college_open'
         ]
+
+    def get_is_college_open(self, obj):
+        is_open, _ = obj.is_college_open()
+        return is_open
 
 
 class DeviceRegistrySerializer(serializers.ModelSerializer):

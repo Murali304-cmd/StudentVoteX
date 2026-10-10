@@ -179,10 +179,12 @@ class Command(BaseCommand):
 
             # Create ID Verification Record if verified
             if s["verification_status"] in ["VERIFIED", "UNDER_REVIEW"]:
+                safe_dept = s['department'].replace('&', '&amp;')
+                safe_name = s['name'].replace('&', '&amp;')
                 IDVerificationRecord.objects.get_or_create(
                     student=profile,
                     defaults={
-                        "id_card_image": f"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='180'><rect width='300' height='180' fill='%23f1f5f9' rx='8'/><text x='20' y='40' font-family='sans-serif' font-weight='bold' fill='%230f172a'>ABC INSTITUTION</text><text x='20' y='70' font-family='sans-serif' fill='%23475569'>Student ID: {s['student_id']}</text><text x='20' y='95' font-family='sans-serif' fill='%23475569'>Name: {s['name']}</text><text x='20' y='120' font-family='sans-serif' fill='%23475569'>Dept: {s['department']}</text><circle cx='250' cy='60' r='30' fill='%230284c7'/></svg>",
+                        "id_card_image": f"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='180'><rect width='300' height='180' fill='%23f1f5f9' rx='8'/><text x='20' y='40' font-family='sans-serif' font-weight='bold' fill='%230f172a'>ABC INSTITUTION</text><text x='20' y='70' font-family='sans-serif' fill='%23475569'>Student ID: {s['student_id']}</text><text x='20' y='95' font-family='sans-serif' fill='%23475569'>Name: {safe_name}</text><text x='20' y='120' font-family='sans-serif' fill='%23475569'>Dept: {safe_dept}</text><circle cx='250' cy='60' r='30' fill='%230284c7'/></svg>",
                         "extracted_id_number": s["student_id"],
                         "match_score": 99.4,
                         "status": s["verification_status"],

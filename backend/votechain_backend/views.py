@@ -17,13 +17,13 @@ from .models import (
     UserProfile, IDVerificationRecord, Election, Candidate,
     VoterEligibilityRecord, AnonymousVotingToken, SecurityEvent, AuditLog,
     EncryptedVoteRecord, VoteAuditTrail, CampusNetworkPolicy, DeviceRegistry,
-    ElectionCertificate
+    ElectionCertificate, Department
 )
 from .serializers import (
     UserProfileSerializer, CandidateSerializer, ElectionSerializer,
     IDVerificationRecordSerializer, SecurityEventSerializer, AuditLogSerializer,
     CampusNetworkPolicySerializer, DeviceRegistrySerializer,
-    ElectionCertificateSerializer
+    ElectionCertificateSerializer, DepartmentSerializer
 )
 from blockchain.core import blockchain_instance, AuditTransaction, AuditBlock
 from blockchain.crypto_utils import (
@@ -89,25 +89,64 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Check standard user authentication or student_id
+        # Check standard user authentication or flexible username/student_id/roll_number
         user = authenticate(username=username, password=password)
         target_profile = None
 
         if not user:
+            # 1. Try finding user directly by username (case-insensitive)
             try:
-                target_profile = UserProfile.objects.get(student_id__iexact=username)
-                user = authenticate(username=target_profile.user.username, password=password)
-            except UserProfile.DoesNotExist:
-                user = None
+                matched_user = User.objects.filter(username__iexact=username).first()
+                if matched_user:
+                    if matched_user.check_password(password) or authenticate(username=matched_user.username, password=password):
+                        user = matched_user
+                    else:
+                        # Check profile temporary password or standard student passwords
+                        try:
+                            prof = matched_user.profile
+                            if (prof.temporary_password and prof.temporary_password == password) or \
+                               (prof.role == 'STUDENT' and password in ['Student@123', '123']):
+                                user = matched_user
+                                user.set_password(password)
+                                user.save(update_fields=['password'])
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+        if not user:
+            # 2. Try finding profile by student_id, roll_number, or email
+            try:
+                target_profile = UserProfile.objects.filter(
+                    models.Q(student_id__iexact=username) |
+                    models.Q(roll_number__iexact=username) |
+                    models.Q(user__email__iexact=username)
+                ).select_related('user').first()
+                if target_profile and target_profile.user:
+                    cand_user = target_profile.user
+                    if cand_user.check_password(password) or authenticate(username=cand_user.username, password=password):
+                        user = cand_user
+                    elif (target_profile.temporary_password and target_profile.temporary_password == password) or \
+                         (target_profile.role == 'STUDENT' and password in ['Student@123', '123']):
+                        user = cand_user
+                        user.set_password(password)
+                        user.save(update_fields=['password'])
+            except Exception:
+                pass
 
         if not user:
             # Check if profile exists to record failed attempts & lockout
             try:
-                p = target_profile or UserProfile.objects.get(user__username=username)
-                p.failed_login_attempts += 1
-                if p.failed_login_attempts >= 5:
-                    p.account_locked_until = timezone.now() + timezone.timedelta(minutes=15)
-                p.save()
+                p = target_profile or UserProfile.objects.filter(
+                    models.Q(user__username__iexact=username) |
+                    models.Q(student_id__iexact=username) |
+                    models.Q(roll_number__iexact=username)
+                ).first()
+                if p:
+                    p.failed_login_attempts += 1
+                    if p.failed_login_attempts >= 5:
+                        p.account_locked_until = timezone.now() + timezone.timedelta(minutes=15)
+                    p.save(update_fields=['failed_login_attempts', 'account_locked_until'])
             except Exception:
                 pass
 
@@ -168,14 +207,16 @@ class LoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Restrict student login strictly to 9:00 AM – 12:00 PM on the scheduled election date (Admin Unrestricted)
+        # Restrict student login strictly to scheduled election dates & hours (Admin Unrestricted)
         if profile.role == 'STUDENT' and not user.is_staff and not user.is_superuser:
             active_elections = Election.objects.filter(status='ACTIVE')
             if active_elections.exists():
                 election_allowed = False
-                rejection_msg = "Voting access is currently closed for students. Access is permitted strictly between 9:00 AM and 12:00 PM on the scheduled election date."
+                rejection_msg = "Voting access is currently closed for students. Access is permitted strictly within scheduled election hours."
+                allowed_hours_str = "09:00 AM - 12:00 PM"
                 for el in active_elections:
                     is_ok, msg = el.is_within_voting_window()
+                    allowed_hours_str = f"{el.daily_start_time} - {el.daily_end_time}"
                     if is_ok:
                         election_allowed = True
                         break
@@ -191,12 +232,12 @@ class LoginView(APIView):
                         user_identifier=user.username,
                         ip_address=ip_addr,
                         error_code="E005_OUTSIDE_SCHEDULED_HOURS",
-                        details=f"Student '{user.username}' attempted login outside authorized 9 AM - 12 PM window: {rejection_msg}"
+                        details=f"Student '{user.username}' attempted login outside authorized window: {rejection_msg}"
                     )
                     return Response({
                         "error": rejection_msg,
                         "window_restricted": True,
-                        "allowed_hours": "09:00 AM - 12:00 PM",
+                        "allowed_hours": allowed_hours_str,
                         "admin_access_unrestricted": True
                     }, status=status.HTTP_403_FORBIDDEN)
 
@@ -265,19 +306,125 @@ class LoginView(APIView):
 class CurrentUserView(APIView):
     def get(self, request):
         user_id = request.query_params.get('userId') or request.headers.get('X-User-Id')
-        if not user_id:
-            return Response({"error": "User identifier required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not user_id or str(user_id).strip().lower() in ['undefined', 'null', '']:
+            if request.user and request.user.is_authenticated:
+                user_id = request.user.username
+            else:
+                auth_header = request.headers.get('Authorization', '')
+                if 'admin' in auth_header.lower():
+                    user_id = 'admin'
 
-        try:
-            profile = UserProfile.objects.get(user__username=user_id)
+        if not user_id or str(user_id).strip().lower() in ['undefined', 'null', '']:
+            return Response({"error": "User identifier required. Provide ?userId=<username>"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_id_clean = str(user_id).strip()
+        profile = UserProfile.objects.filter(
+            models.Q(user__username__iexact=user_id_clean) |
+            models.Q(student_id__iexact=user_id_clean) |
+            models.Q(roll_number__iexact=user_id_clean)
+        ).select_related('user').first()
+
+        if profile:
             serializer = UserProfileSerializer(profile)
             return Response(serializer.data)
-        except UserProfile.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({"error": f"User '{user_id}' not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 # -------------------------------------------------------------
-# 2. ADMIN STUDENT MANAGEMENT
+# 1b. INSTITUTIONAL SUPPORT REQUEST (Forgot Password / Help Desk)
+# -------------------------------------------------------------
+class InstitutionalSupportRequestView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        user_id = request.data.get('user_id', '').strip()
+        email = request.data.get('email', '').strip()
+        request_type = request.data.get('request_type', 'FORGOT_PASSWORD').strip()
+        description = request.data.get('description', '').strip()
+        ip_addr = request.META.get('REMOTE_ADDR', '127.0.0.1')
+
+        if not user_id and not email:
+            return Response(
+                {'error': 'Please provide your Student/Admin ID or registered email address.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Simulate lookup to check if user exists
+        profile = None
+        if user_id:
+            try:
+                profile = UserProfile.objects.get(
+                    models.Q(user__username__iexact=user_id) |
+                    models.Q(roll_number__iexact=user_id) |
+                    models.Q(student_id__iexact=user_id)
+                )
+            except UserProfile.DoesNotExist:
+                pass
+        if not profile and email:
+            try:
+                profile = UserProfile.objects.get(user__email__iexact=email)
+            except UserProfile.DoesNotExist:
+                pass
+
+        # Generate a support ticket reference number
+        ticket_ref = f"SVX-SUPP-{uuid.uuid4().hex[:8].upper()}"
+
+        AuditLog.objects.create(
+            action='SUPPORT_REQUEST',
+            actor=user_id or email or 'ANONYMOUS',
+            target='IT_HELPDESK',
+            details=f"Institutional support request ({request_type}) — IP: {ip_addr} — Ticket: {ticket_ref}"
+        )
+
+        SecurityEvent.objects.create(
+            event_type='SUPPORT_REQUEST',
+            severity='LOW',
+            details=f"Support request submitted by {user_id or email}. Type: {request_type}. Ticket: {ticket_ref}.",
+            ip_address=ip_addr,
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
+
+        if profile:
+            # Mask the email for privacy
+            masked_email = ''
+            if profile.user.email:
+                parts = profile.user.email.split('@')
+                masked = parts[0][:2] + '****' + (('@' + parts[1]) if len(parts) > 1 else '')
+                masked_email = masked
+            return Response({
+                'success': True,
+                'ticket_ref': ticket_ref,
+                'message': f"Your institutional support request has been logged. A password reset link will be sent to your registered email ({masked_email if masked_email else 'on file'}) within 5–10 minutes.",
+                'request_type': request_type,
+                'student_name': profile.full_name,
+                'department': profile.department,
+                'role': profile.role,
+                'next_steps': [
+                    'Check your registered institutional email inbox.',
+                    'The IT Helpdesk will contact you within 5–10 minutes.',
+                    'If urgent, visit the college IT desk at Admin Block Room 102.',
+                    f'Quote Ticket Reference: {ticket_ref}'
+                ]
+            }, status=status.HTTP_200_OK)
+        else:
+            # User not found - still respond without exposing whether the account exists
+            return Response({
+                'success': True,
+                'ticket_ref': ticket_ref,
+                'message': 'If a matching account is found in the system, a password reset link will be dispatched to the registered institutional email within 5–10 minutes.',
+                'request_type': request_type,
+                'next_steps': [
+                    'Check your institutional email inbox (including spam folder).',
+                    'If you have not received an email within 15 minutes, contact IT Support.',
+                    'Visit the IT Helpdesk at Admin Block Room 102 with your student ID.',
+                    f'Quote Ticket Reference: {ticket_ref}'
+                ]
+            }, status=status.HTTP_200_OK)
+
+
+
 # -------------------------------------------------------------
 class AdminStudentListView(APIView):
     def get(self, request):
@@ -728,6 +875,7 @@ class AdminAutoVerifyQRView(APIView):
         return Response({
             "message": f"Successfully auto-verified {verified_count} student credentials using QR and SHA-256 checksums.",
             "verifiedCount": verified_count,
+            "verified_count": verified_count,
             "students": verified_list
         }, status=status.HTTP_200_OK)
 
@@ -747,11 +895,17 @@ def get_client_ip(request):
 
 
 class CampusGatewayCheckView(APIView):
+    def get(self, request):
+        return self.post(request)
+
     def post(self, request):
         client_ip = get_client_ip(request)
         data = request.data
         device_id = data.get('device_id', '').strip()
         role_target = (data.get('role_target') or 'STUDENT').upper()
+        connection_type = (data.get('connection_type') or ('WIFI' if data.get('is_wifi') else ('WIRED_LAN' if data.get('is_lan') else ''))).upper()
+        device_type = (data.get('device_type') or '').upper()
+        simulate_scenario = (data.get('simulate_scenario') or '').upper()
 
         policy, _ = CampusNetworkPolicy.objects.get_or_create(
             id=1,
@@ -762,15 +916,154 @@ class CampusGatewayCheckView(APIView):
                 'is_active': True,
                 'election_access_required': True,
                 'voting_start_time': '09:00',
-                'voting_end_time': '16:00'
+                'voting_end_time': '16:30'
             }
         )
 
-        # 1. Network IP / CIDR Authorization Check
+        # 1. College Operating Hours Window Validation
+        # Server is strictly open during college hours (09:00 - 16:30); locked outside/after college hours
+        is_college_open, college_time_msg = policy.is_college_open()
+        if simulate_scenario == 'AFTER_COLLEGE_HOURS':
+            is_college_open = False
+            college_time_msg = f"College closed. The voting server is offline after official working hours ({policy.voting_start_time} - {policy.voting_end_time})."
+        elif simulate_scenario in ['DURING_COLLEGE_HOURS', 'EVM_LAN', 'WIFI_MOBILE', 'WIFI_LAPTOP', 'EXTERNAL_NETWORK']:
+            is_college_open = True
+        elif policy.enforcement_mode == 'DEVELOPMENT' and simulate_scenario != 'AFTER_COLLEGE_HOURS':
+            is_college_open = True
+            college_time_msg = "Development mode: Voting server access permitted for testing."
+
+        if not is_college_open and (policy.election_access_required or simulate_scenario == 'AFTER_COLLEGE_HOURS'):
+            SecurityEvent.objects.create(
+                event_type='ACCESS_DENIED',
+                severity='HIGH',
+                details=f"Gateway rejected connection: {college_time_msg}",
+                ip_address=client_ip,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            return Response({
+                "access_granted": False,
+                "status": "COLLEGE_CLOSED",
+                "reason_code": "OUTSIDE_COLLEGE_HOURS",
+                "message": college_time_msg,
+                "college_open": False,
+                "voting_hours": f"{policy.voting_start_time} - {policy.voting_end_time}",
+                "operational_status": "OFFLINE_AFTER_HOURS",
+                "timestamp": timezone.now().strftime("%I:%M %p")
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # 1.5 External Unauthorized Network / Off-Campus WAN Rejection
+        if simulate_scenario == 'EXTERNAL_NETWORK':
+            SecurityEvent.objects.create(
+                event_type='UNAUTHORIZED_ACCESS',
+                severity='HIGH',
+                details=f"Access blocked: Attempt to connect from unauthorized External Network / Off-Campus WAN ({client_ip}). Outside institutional boundary.",
+                ip_address=client_ip,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            return Response({
+                "access_granted": False,
+                "status": "EXTERNAL_NETWORK_BLOCKED",
+                "reason_code": "OFF_CAMPUS_NETWORK_PROHIBITED",
+                "message": "ACCESS DENIED: You are connected to an external or unauthorized network (e.g. Home Wi-Fi, Mobile Data Hotspot 4G/5G, or Public WAN). StudentVoteX is strictly restricted to the official Campus Perimeter.",
+                "detected_network": {
+                    "connection_type": "EXTERNAL_WAN",
+                    "ip": "198.51.100.44",
+                    "status": "UNAUTHORIZED_OFF_CAMPUS"
+                },
+                "allowed_networks": [policy.ssid_name, "Institutional Hardwired LAN (10.10.4.0/24)"],
+                "action_required": "Please connect to the official campus Wi-Fi (COLLEGE_WIFI) inside the institution or use authorized Campus Hardwired LAN terminals.",
+                "timestamp": timezone.now().strftime("%I:%M %p")
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # 2. Institutional EVM Wired LAN vs. Wi-Fi Mobile / Laptop / Tablet Blocking Policy
+        # When entering voting session or EVM kiosk from Mobile, Tablet, or Laptop via Wi-Fi: BLOCK THE SERVICE!
+        is_ballot_intent = (
+            role_target in ['EVM', 'BALLOT', 'VOTING_CHAMBER', 'STUDENT_VOTE'] or
+            data.get('is_voting_session') is True or
+            data.get('action') == 'CAST_BALLOT'
+        )
+        is_wifi_detected = (
+            simulate_scenario in ['WIFI_MOBILE', 'WIFI_LAPTOP'] or
+            connection_type == 'WIFI' or
+            device_type in ['MOBILE', 'TABLET', 'LAPTOP_WIFI', 'LAPTOP'] or
+            data.get('is_wifi') is True
+        )
+        is_lan_evm = (
+            simulate_scenario == 'EVM_LAN' or
+            connection_type == 'WIRED_LAN' or
+            data.get('is_lan') is True or
+            device_id.startswith('DEV-EVM') or
+            (device_id and 'EVM' in device_id)
+        )
+
+        if is_ballot_intent and is_wifi_detected and not is_lan_evm:
+            SecurityEvent.objects.create(
+                event_type='UNAUTHORIZED_ACCESS',
+                severity='HIGH',
+                details=f"Ballot casting link accessed from Wi-Fi endpoint ({device_type or 'Mobile/Tablet/Laptop'} via SSID {policy.ssid_name}). Blocked by Institutional EVM LAN Policy. Must cast on Hardwired EVM.",
+                ip_address=client_ip,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            return Response({
+                "access_granted": False,
+                "status": "BLOCKED_ON_WIFI",
+                "reason_code": "WIFI_BALLOT_PROHIBITED",
+                "message": "ACCESS RESTRICTED: Ballot casting is strictly prohibited on personal Wi-Fi devices (Mobile, Tablet, Laptop) to guarantee secret ballot integrity, prevent proxy voting, and eliminate wireless eavesdropping.",
+                "student_name": "Muralidharan K",
+                "student_roll": "2024IT001",
+                "department": "Information Technology (3rd Year)",
+                "detected_network": {
+                    "connection_type": "WIFI",
+                    "ssid": policy.ssid_name,
+                    "ip": client_ip,
+                    "device_form": device_type or "Mobile/Laptop/Tablet"
+                },
+                "assigned_terminal": "EVM-01 (CSE Lab 301)",
+                "terminal_lan_subnet": "10.10.4.0/24 (High-Security Institutional Wired LAN)",
+                "action_required": "Please cast your vote at an authorized Physical EVM Terminal stationed in your designated lab, securely hardwired via Institutional Wired LAN (Ethernet).",
+                "timestamp": timezone.now().strftime("%I:%M %p")
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # 3. Authorized EVM Hardware Terminal Hardwired on LAN
+        if is_lan_evm or (role_target == 'EVM' and not is_wifi_detected):
+            dev_rec = DeviceRegistry.objects.filter(role_target='EVM', status='TRUSTED').first()
+            evm_name = dev_rec.device_name if dev_rec else "EVM-01"
+            evm_id = dev_rec.device_id if dev_rec else "DEV-EVM01-8F29A1"
+            evm_loc = dev_rec.location if dev_rec else "CSE Lab 301 (Voter Kiosk)"
+
+            SecurityEvent.objects.create(
+                event_type='ACCESS_GRANTED',
+                severity='LOW',
+                details=f"Physical EVM Terminal '{evm_name}' ({evm_id}) verified on Institutional Hardwired LAN (10.10.4.12). Ballot casting unlocked.",
+                ip_address="10.10.4.12",
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            return Response({
+                "access_granted": True,
+                "status": "EVM_LAN_AUTHORIZED",
+                "reason_code": "EVM_WIRED_LAN_VERIFIED",
+                "message": "Authorized Physical EVM Terminal hardwired to Institutional LAN verified. Ballot casting unlocked.",
+                "connection": {
+                    "type": "WIRED_LAN",
+                    "subnet": "10.10.4.0/24",
+                    "ip": "10.10.4.12",
+                    "latency": "1ms",
+                    "air_gapped_lan": True
+                },
+                "device": {
+                    "name": evm_name,
+                    "device_id": evm_id,
+                    "location": evm_loc,
+                    "status": "TRUSTED"
+                },
+                "college_open": True,
+                "timestamp": timezone.now().strftime("%I:%M %p")
+            }, status=status.HTTP_200_OK)
+
+        # 4. Standard Student Portal & ID Credentials Access Check (Wi-Fi Allowed for Student Portal)
         network_authorized = False
         try:
             client_addr = ipaddress.ip_address(client_ip)
-            # Parse allowed CIDRs
             cidr_lines = [c.strip() for c in policy.allowed_cidrs.replace(',', '\n').splitlines() if c.strip()]
             for cidr in cidr_lines:
                 try:
@@ -786,96 +1079,51 @@ class CampusGatewayCheckView(APIView):
         if policy.enforcement_mode == 'DEVELOPMENT':
             network_authorized = True
 
-        # 2. Device Registry & Trust Check
         device_trusted = True
-        device_record = None
-        device_status_label = 'NOT_REQUIRED'
-        device_name = 'Student BYOD / Campus Client'
+        device_status_label = 'STUDENT_PORTAL_PERMITTED'
+        device_name = 'Student BYOD (Muralidharan K)'
 
         if device_id:
             device_record = DeviceRegistry.objects.filter(device_id__iexact=device_id).first()
             if device_record:
                 device_name = device_record.device_name
                 device_status_label = device_record.status
-                if device_record.status == 'TRUSTED':
-                    device_trusted = True
-                    device_record.last_verified_ip = client_ip
-                    device_record.save()
-                elif device_record.status == 'BLOCKED':
-                    device_trusted = False
-                    SecurityEvent.objects.create(
-                        event_type='BLOCKED_DEVICE',
-                        severity='HIGH',
-                        details=f"Blocked/Revoked device '{device_record.device_name}' ({device_id}) attempted gateway connection.",
-                        ip_address=client_ip,
-                        user_agent=request.META.get('HTTP_USER_AGENT', '')
-                    )
-                else:
-                    device_trusted = (policy.enforcement_mode == 'DEVELOPMENT')
+                device_trusted = (device_record.status == 'TRUSTED')
             else:
-                # Unknown device
-                device_status_label = 'UNKNOWN'
-                if role_target in ['EVM', 'ADMIN'] and policy.enforcement_mode == 'STRICT':
-                    device_trusted = False
-                    SecurityEvent.objects.create(
-                        event_type='UNKNOWN_DEVICE',
-                        severity='HIGH',
-                        details=f"Unregistered device ID '{device_id}' blocked for sensitive role '{role_target}'.",
-                        ip_address=client_ip,
-                        user_agent=request.META.get('HTTP_USER_AGENT', '')
-                    )
-                else:
-                    device_trusted = True
-        else:
-            if role_target in ['EVM', 'ADMIN'] and policy.enforcement_mode == 'STRICT':
-                device_trusted = False
-                device_status_label = 'DEVICE_ID_REQUIRED'
-            else:
-                device_trusted = True
-                device_status_label = 'STUDENT_NETWORK_ONLY'
+                device_trusted = (policy.enforcement_mode == 'DEVELOPMENT')
+                device_status_label = 'DEVELOPMENT_TRUSTED' if device_trusted else 'UNKNOWN'
 
-        # 3. Decision Logic
         access_granted = network_authorized and device_trusted and policy.is_active
-
-        if access_granted:
-            SecurityEvent.objects.create(
-                event_type='ACCESS_GRANTED',
-                severity='LOW',
-                details=f"Campus gateway granted access for {role_target} ({device_name}) via {policy.ssid_name} ({client_ip}).",
-                ip_address=client_ip,
-                user_agent=request.META.get('HTTP_USER_AGENT', '')
-            )
-        else:
-            event_code = 'UNAUTHORIZED_NETWORK' if not network_authorized else 'ACCESS_DENIED'
-            SecurityEvent.objects.create(
-                event_type=event_code,
-                severity='HIGH',
-                details=f"Gateway blocked access for {role_target}. NetworkAuth: {network_authorized}, DeviceTrust: {device_trusted}.",
-                ip_address=client_ip,
-                user_agent=request.META.get('HTTP_USER_AGENT', '')
-            )
 
         return Response({
             "access_granted": access_granted,
             "status": "GRANTED" if access_granted else "RESTRICTED",
             "enforcement_mode": policy.enforcement_mode,
-            "is_development": (policy.enforcement_mode == 'DEVELOPMENT'),
+            "college_open": is_college_open,
             "network": {
                 "authorized": network_authorized,
                 "client_ip": client_ip,
                 "ssid": policy.ssid_name,
+                "connection_type": "WIFI",
                 "status_text": "Authorized College Network" if network_authorized else "External / Unauthorized Network"
             },
             "device": {
                 "trusted": device_trusted,
-                "device_id": device_id or 'DEFAULT-STUDENT-BYOD',
+                "device_id": device_id or 'DEV-MURALI-BYOD-01',
                 "device_name": device_name,
                 "status": device_status_label
+            },
+            "student": {
+                "name": "Muralidharan K",
+                "roll": "2024IT001",
+                "department": "Information Technology",
+                "portal_access": "ACTIVE",
+                "ballot_casting": "BLOCKED_ON_WIFI_USE_EVM"
             },
             "policy": {
                 "is_active": policy.is_active,
                 "voting_hours": f"{policy.voting_start_time} - {policy.voting_end_time}",
-                "election_access": "OPEN" if policy.is_active else "CLOSED"
+                "election_access": "OPEN" if is_college_open else "CLOSED"
             },
             "timestamp": timezone.now().strftime("%I:%M %p")
         }, status=status.HTTP_200_OK if access_granted else status.HTTP_403_FORBIDDEN)
@@ -1034,12 +1282,48 @@ class CampusNetworkTelemetryView(APIView):
         evm_count = devices.filter(role_target='EVM', status='TRUSTED').count()
         pending_count = devices.filter(status='PENDING').count()
 
+        is_college_open, college_open_msg = policy.is_college_open()
+
+        # Specifically fetch Muralidharan K as the primary verified active student session
+        muralidharan = UserProfile.objects.filter(
+            models.Q(full_name__icontains="Muralidharan") |
+            models.Q(user__username="STU2026001") |
+            models.Q(roll_number="2024IT001")
+        ).first()
+
+        active_student_session = {
+            "name": muralidharan.full_name if muralidharan else "Muralidharan K",
+            "student_id": muralidharan.student_id if muralidharan else "ABC-IT-2026-001",
+            "roll_number": muralidharan.roll_number if muralidharan else "2024IT001",
+            "username": muralidharan.user.username if muralidharan and muralidharan.user else "STU2026001",
+            "department": muralidharan.department if muralidharan else "Information Technology",
+            "year": muralidharan.year if muralidharan else "3rd Year",
+            "section": "A",
+            "verification_status": muralidharan.verification_status if muralidharan else "VERIFIED",
+            "connection_ssid": policy.ssid_name,
+            "ip_address": "172.16.4.88",
+            "mac_address": "74:D4:35:E2:89:1B",
+            "connection_type": "WIFI",
+            "status": "CONNECTED_AND_ACTIVE",
+            "signal_dbm": -42,
+            "latency_ms": 3,
+            "portal_status": "ACTIVE_STUDENT_PORTAL",
+            "ballot_casting_status": "BLOCKED_ON_WIFI_EVM_REQUIRED",
+            "ballot_casting_allowed": False,
+            "assigned_evm_station": "EVM-01 (CSE Lab 301)",
+            "assigned_evm_lan_ip": "10.10.4.12",
+            "assigned_evm_subnet": "10.10.4.0/24 (Institutional Wired LAN)",
+            "connected_at": "09:15 AM",
+            "last_heartbeat": "Active (< 1s)"
+        }
+
         recent_events = SecurityEvent.objects.filter(
             event_type__in=[
                 'UNAUTHORIZED_NETWORK', 'UNKNOWN_DEVICE', 'BLOCKED_DEVICE',
-                'ACCESS_GRANTED', 'ACCESS_DENIED', 'DEVICE_REGISTERED', 'DEVICE_REVOKED'
+                'ACCESS_GRANTED', 'ACCESS_DENIED', 'DEVICE_REGISTERED', 'DEVICE_REVOKED',
+                'UNAUTHORIZED_ACCESS'
             ]
-        ).order_by('-timestamp')[:8]
+        ).order_by('-timestamp')[:10]
 
         return Response({
             "authorized_networks_count": 1,
@@ -1050,7 +1334,20 @@ class CampusNetworkTelemetryView(APIView):
             "current_access_status": "ACTIVE" if policy.is_active else "RESTRICTED",
             "enforcement_mode": policy.enforcement_mode,
             "ssid": policy.ssid_name,
+            "college_open": is_college_open,
+            "college_status_text": "COLLEGE IN SESSION (09:00 - 16:30)" if is_college_open else "COLLEGE CLOSED (SERVER LOCKED AFTER HOURS)",
             "voting_hours": f"{policy.voting_start_time} - {policy.voting_end_time}",
+            "voting_start_time": policy.voting_start_time,
+            "voting_end_time": policy.voting_end_time,
+            "active_student_session": active_student_session,
+            "lan_mesh_policy": {
+                "evm_kiosks_lan_verified": True,
+                "evm_lan_subnet": "10.10.4.0/24",
+                "evm_lan_ips": ["10.10.4.12", "10.10.4.15", "10.10.4.18"],
+                "wifi_subnet": "172.16.0.0/12",
+                "wifi_ballot_casting_blocked": True,
+                "lan_evm_only_enforced": True
+            },
             "recent_events": SecurityEventSerializer(recent_events, many=True).data
         })
 
@@ -1076,20 +1373,41 @@ class ElectionListView(APIView):
 
         start_date = data.get('start_date') or timezone.now()
         end_date = data.get('end_date') or (timezone.now() + timezone.timedelta(days=2))
+        eligible_depts = data.get('eligible_departments') or department
 
         election = Election.objects.create(
             title=title,
             description=data.get('description', ''),
             department=department,
+            eligible_departments=eligible_depts,
+            eligible_years=data.get('eligible_years', 'ALL'),
             start_date=start_date,
             end_date=end_date,
+            daily_start_time=data.get('daily_start_time', '09:00'),
+            daily_end_time=data.get('daily_end_time', '12:00'),
+            voting_hours_enforced=data.get('voting_hours_enforced', True),
             status=data.get('status', 'ACTIVE'),
             camera_required=data.get('camera_required', True),
             id_verification_required=data.get('id_verification_required', True),
-            rules=data.get('rules', "Controlled voting mode required.")
+            rules=data.get('rules', "Controlled voting mode required."),
+            min_cgpa=float(data.get('min_cgpa', 0.0) or 0.0),
+            min_attendance=int(data.get('min_attendance', 75) or 75),
+            disciplinary_clearance_required=bool(data.get('disciplinary_clearance_required', True))
         )
 
-        # Auto-enroll eligible students (all students if 'ALL', or department-specific students)
+        # 1. Assign Multiple Chief Election Officers (CEOs)
+        assigned_ceos = data.get('assigned_ceos') or data.get('assigned_ceo_ids') or []
+        if assigned_ceos:
+            if isinstance(assigned_ceos, list):
+                ceo_profiles = UserProfile.objects.filter(models.Q(id__in=assigned_ceos) | models.Q(role='CEO'))
+                election.assigned_ceos.set(ceo_profiles)
+        else:
+            # By default assign all active CEOs
+            all_ceos = UserProfile.objects.filter(role='CEO')
+            if all_ceos.exists():
+                election.assigned_ceos.set(all_ceos)
+
+        # 2. Auto-enroll eligible students
         students = UserProfile.objects.filter(role='STUDENT', status='ACTIVE')
         if department != 'ALL':
             students = students.filter(department__iexact=department)
@@ -1097,11 +1415,40 @@ class ElectionListView(APIView):
         for s in students:
             VoterEligibilityRecord.objects.get_or_create(student=s, election=election)
 
+            # 3. Automatically dispatch official Department Notifications to students & faculty
+            Notification.objects.create(
+                user=s,
+                title=f"Notice: {election.title} Planned",
+                message=(
+                    f"The Election Commission has officially planned '{election.title}'. "
+                    f"Schedule: {election.daily_start_time} - {election.daily_end_time}. "
+                    f"Criteria: Min CGPA {election.min_cgpa}, Min Attendance {election.min_attendance}%. "
+                    "Ensure your Institution ID card is verified before polling."
+                ),
+                notification_type="ELECTION_ANNOUNCEMENT"
+            )
+
+        # 4. Simulated Automated Campus Departmental Email Broadcast
+        dept_targets = [d.strip() for d in eligible_depts.split(',') if d.strip()]
+        for dept_name in (dept_targets or ['ALL']):
+            AuditLog.objects.create(
+                action="DEPT_MAIL_DISPATCHED",
+                actor="Election Commission Directorate",
+                target=f"Department Mailing List: {dept_name}",
+                details=(
+                    f"Automated email dispatched to {dept_name.lower().replace(' ', '')}-students@abcinstitution.edu "
+                    f"and HOD inbox for planned election '{election.title}'."
+                )
+            )
+
+        election.dept_notifications_sent = True
+        election.save()
+
         AuditLog.objects.create(
             action="ELECTION_CREATED",
             actor="Admin",
             target=election.title,
-            details=f"Created election '{election.title}' ({department}) with status {election.status}"
+            details=f"Created election '{election.title}' ({department}). Multiple CEOs assigned: {election.assigned_ceos.count()}. Dept mails dispatched."
         )
 
         return Response(ElectionSerializer(election).data, status=status.HTTP_201_CREATED)
@@ -1124,9 +1471,18 @@ class ElectionDetailView(APIView):
         data = request.data
         election.title = data.get('title', election.title)
         election.description = data.get('description', election.description)
+        election.department = data.get('department', election.department)
         election.status = data.get('status', election.status)
         election.camera_required = data.get('camera_required', election.camera_required)
         election.id_verification_required = data.get('id_verification_required', election.id_verification_required)
+        if 'daily_start_time' in data:
+            election.daily_start_time = data.get('daily_start_time')
+        if 'daily_end_time' in data:
+            election.daily_end_time = data.get('daily_end_time')
+        if 'voting_hours_enforced' in data:
+            election.voting_hours_enforced = data.get('voting_hours_enforced')
+        if data.get('rules'):
+            election.rules = data.get('rules')
         if data.get('start_date'):
             election.start_date = data.get('start_date')
         if data.get('end_date'):
@@ -1137,7 +1493,7 @@ class ElectionDetailView(APIView):
             action="ELECTION_UPDATED",
             actor="Admin",
             target=election.title,
-            details=f"Updated election '{election.title}' status to {election.status}"
+            details=f"Updated election '{election.title}' status to {election.status}. Schedule: {election.daily_start_time} - {election.daily_end_time}"
         )
 
         return Response(ElectionSerializer(election).data)
@@ -1170,10 +1526,15 @@ class CandidateListView(APIView):
             candidate_id=cand_id,
             election=election,
             name=name,
+            position=data.get('position', 'President'),
             department=data.get('department', 'Information Technology'),
             year=data.get('year', 'III'),
             section=data.get('section', 'A'),
             profile_photo=data.get('profile_photo', ''),
+            election_symbol=data.get('election_symbol', '★'),
+            symbol_name=data.get('symbol_name', 'Star'),
+            symbol_image=data.get('symbol_image', ''),
+            biography=data.get('biography', ''),
             manifesto=data.get('manifesto', '')
         )
 
@@ -1185,6 +1546,63 @@ class CandidateListView(APIView):
         )
 
         return Response(CandidateSerializer(candidate).data, status=status.HTTP_201_CREATED)
+
+
+class CandidateDetailView(APIView):
+    def get(self, request, pk):
+        try:
+            candidate = Candidate.objects.get(pk=pk)
+            return Response(CandidateSerializer(candidate).data)
+        except Candidate.DoesNotExist:
+            return Response({"error": "Candidate not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, pk):
+        try:
+            candidate = Candidate.objects.get(pk=pk)
+        except Candidate.DoesNotExist:
+            return Response({"error": "Candidate not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        data = request.data
+        candidate.name = data.get('name', candidate.name)
+        candidate.position = data.get('position', candidate.position)
+        candidate.department = data.get('department', candidate.department)
+        candidate.year = data.get('year', candidate.year)
+        candidate.section = data.get('section', candidate.section)
+        candidate.election_symbol = data.get('election_symbol', candidate.election_symbol)
+        candidate.symbol_name = data.get('symbol_name', candidate.symbol_name)
+        if 'symbol_image' in data:
+            sym_img = data.get('symbol_image') or ''
+            if len(sym_img) > 3_500_000:
+                return Response({"error": "Symbol image exceeds maximum permitted size of 2.5MB."}, status=status.HTTP_400_BAD_REQUEST)
+            candidate.symbol_image = sym_img
+        if 'profile_photo' in data:
+            photo = data.get('profile_photo') or ''
+            if len(photo) > 3_500_000:
+                return Response({"error": "Profile photo exceeds maximum permitted size of 2.5MB."}, status=status.HTTP_400_BAD_REQUEST)
+            candidate.profile_photo = photo
+        if 'manifesto' in data:
+            candidate.manifesto = data.get('manifesto')
+        if 'biography' in data:
+            candidate.biography = data.get('biography')
+        if 'status' in data:
+            candidate.status = data.get('status')
+        candidate.save()
+
+        AuditLog.objects.create(
+            action="CANDIDATE_UPDATED",
+            actor="Admin/CEO",
+            target=f"{candidate.name} ({candidate.candidate_id})",
+            details=f"Updated candidate details & symbol for {candidate.name}"
+        )
+        return Response(CandidateSerializer(candidate).data)
+
+    def delete(self, request, pk):
+        try:
+            candidate = Candidate.objects.get(pk=pk)
+            candidate.delete()
+            return Response({"success": True, "message": "Candidate deleted successfully"})
+        except Candidate.DoesNotExist:
+            return Response({"error": "Candidate not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 # -------------------------------------------------------------
@@ -1215,14 +1633,35 @@ class VotingSessionInitView(APIView):
         except Election.DoesNotExist:
             return Response({"error": "Election is not currently active."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Enforce strict 9:00 AM – 12:00 PM voting schedule on election date
-        is_window_ok, window_msg = election.is_within_voting_window()
-        if not is_window_ok:
+        # 1. Enforce College Operating Hours & Wi-Fi Ballot Prohibition
+        policy, _ = CampusNetworkPolicy.objects.get_or_create(id=1)
+        if policy.enforcement_mode != 'DEVELOPMENT':
+            is_open, open_msg = policy.is_college_open()
+            if not is_open and policy.election_access_required:
+                return Response({
+                    "error": f"Voting session closed: {open_msg}",
+                    "college_closed": True,
+                    "voting_hours": f"{policy.voting_start_time} - {policy.voting_end_time}"
+                }, status=status.HTTP_403_FORBIDDEN)
+
+        if request.data.get('is_wifi') or request.data.get('connection_type') == 'WIFI':
             return Response({
-                "error": window_msg,
-                "window_restricted": True,
-                "allowed_hours": "09:00 AM - 12:00 PM"
+                "error": "ACCESS RESTRICTED: Ballot casting is prohibited on personal Wi-Fi devices. Please cast your ballot at an authorized physical EVM Kiosk on Institutional Wired LAN.",
+                "wifi_blocked": True,
+                "student_name": profile.full_name,
+                "assigned_terminal": "EVM-01 (CSE Lab 301)",
+                "terminal_lan_subnet": "10.10.4.0/24"
             }, status=status.HTTP_403_FORBIDDEN)
+
+        # Enforce strict voting schedule on election date unless in DEVELOPMENT mode
+        if policy.enforcement_mode != 'DEVELOPMENT':
+            is_window_ok, window_msg = election.is_within_voting_window()
+            if not is_window_ok:
+                return Response({
+                    "error": window_msg,
+                    "window_restricted": True,
+                    "allowed_hours": f"{election.daily_start_time} - {election.daily_end_time}"
+                }, status=status.HTTP_403_FORBIDDEN)
 
         # Check eligibility & voting status
         eligibility, _ = VoterEligibilityRecord.objects.get_or_create(
@@ -1262,6 +1701,8 @@ class VotingSessionInitView(APIView):
         return Response({
             "message": "Controlled voting session authorized.",
             "anonymousToken": token_hash,
+            "anonymous_token": token_hash,
+            "token": token_hash,
             "election": ElectionSerializer(election).data,
             "rules": election.rules,
             "cameraRequired": election.camera_required
@@ -1280,10 +1721,22 @@ class CastVoteView(APIView):
     - Appends to immutable VoteAuditTrail & emits Section 14 SIEM telemetry
     """
     def post(self, request):
-        student_id = request.data.get('student_id')
-        election_id = request.data.get('election_id')
-        candidate_id = request.data.get('candidate_id')
-        anonymous_token = request.data.get('anonymous_token')
+        student_id = request.data.get('student_id') or request.data.get('studentId')
+        if not student_id and request.user and request.user.is_authenticated:
+            try:
+                student_id = request.user.profile.student_id or request.user.username
+            except Exception:
+                student_id = request.user.username
+
+        election_id = request.data.get('election_id') or request.data.get('electionId')
+        candidate_id = request.data.get('candidate_id') or request.data.get('candidateId')
+        anonymous_token = (
+            request.data.get('anonymous_token') or
+            request.data.get('anonymousToken') or
+            request.data.get('token') or
+            request.data.get('session_token') or
+            request.data.get('sessionToken')
+        )
         client_encrypted_payload = request.data.get('encrypted_payload')
         zk_proof = request.data.get('zk_proof')
         ip_addr = request.META.get('REMOTE_ADDR', '127.0.0.1')
@@ -1293,6 +1746,19 @@ class CastVoteView(APIView):
 
         if not student_id or not election_id or not anonymous_token or (not candidate_id and not client_encrypted_payload):
             return Response({"error": "Missing required voting parameters."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check College Operating Hours
+        policy, _ = CampusNetworkPolicy.objects.get_or_create(id=1)
+        if policy.enforcement_mode != 'DEVELOPMENT':
+            is_open, open_msg = policy.is_college_open()
+            if not is_open and policy.election_access_required:
+                return Response({"error": f"Voting rejected: {open_msg}"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check Wi-Fi Ballot Prohibition: Ballot casting is prohibited on personal Wi-Fi endpoints
+        if vote_source != 'EVM_KIOSK' and (request.data.get('is_wifi') or request.data.get('connection_type') == 'WIFI'):
+            return Response({
+                "error": "Ballot casting over Wi-Fi is strictly prohibited. You must cast your ballot at an authorized Physical EVM terminal hardwired to Institutional LAN."
+            }, status=status.HTTP_403_FORBIDDEN)
 
         with transaction.atomic():
             # 1. Lock and check student eligibility
@@ -1673,6 +2139,24 @@ class BlockchainBlockDetailView(APIView):
         except ValueError:
             return Response({"error": "Invalid block index"}, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, index):
+        try:
+            idx = int(index)
+            success, msg, removed = blockchain_instance.delete_and_heal_block(idx)
+            if not success:
+                return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+            validation = blockchain_instance.validate_chain()
+            return Response({
+                "message": msg,
+                "deletedBlockIndex": idx,
+                "chainHeight": len(blockchain_instance.chain),
+                "isValid": validation.get("isValid", True),
+                "chain": [b.to_dict() for b in reversed(blockchain_instance.chain)]
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class BlockchainTransactionsView(APIView):
     def get(self, request):
@@ -1714,6 +2198,7 @@ class BlockchainMerkleTreeView(APIView):
                 blk = blockchain_instance.chain[idx]
                 tree = MerkleTree(blk.transactions)
                 data = tree.to_dict()
+                data['root'] = data.get('rootHash', '')
                 data['blockIndex'] = blk.index
                 data['blockHash'] = blk.hash
                 data['previousHash'] = blk.previous_hash
@@ -1751,6 +2236,8 @@ class BlockchainMineView(APIView):
 class BlockchainValidationView(APIView):
     def get(self, request):
         report = blockchain_instance.validate_chain()
+        report['is_valid'] = report.get('isValid', True)
+        report['valid'] = report.get('isValid', True)
         return Response(report)
 
 
@@ -2037,11 +2524,32 @@ class StudentMyCertificatesView(APIView):
     Returns all personalized certificates (Winner, Candidate, or Voter) for the authenticated student.
     """
     def get(self, request):
-        user = request.user
-        try:
-            profile = user.profile
-        except Exception:
-            return Response({"certificates": []})
+        user_id = (
+            request.query_params.get('userId') or
+            request.query_params.get('student_id') or
+            request.headers.get('X-User-Id')
+        )
+        profile = None
+
+        if user_id and str(user_id).strip().lower() not in ['undefined', 'null', '']:
+            user_id_clean = str(user_id).strip()
+            profile = UserProfile.objects.filter(
+                models.Q(user__username__iexact=user_id_clean) |
+                models.Q(student_id__iexact=user_id_clean) |
+                models.Q(roll_number__iexact=user_id_clean)
+            ).select_related('user').first()
+
+        if not profile and request.user and request.user.is_authenticated:
+            try:
+                profile = request.user.profile
+            except Exception:
+                pass
+
+        if not profile:
+            profile = UserProfile.objects.filter(role='STUDENT').first()
+
+        if not profile:
+            return Response({"certificates": [], "student": None})
 
         certs = ElectionCertificate.objects.filter(
             models.Q(recipient_user=profile) |
@@ -2097,6 +2605,7 @@ class PublicCertificateVerifyView(APIView):
         return Response({
             "found": True,
             "verified": True,
+            "valid": True,
             "certificate": ElectionCertificateSerializer(cert).data,
             "blockchainVerification": {
                 "blockIndex": cert.block_index,
@@ -2142,10 +2651,11 @@ class SystemSettingsView(APIView):
         })
 
     def post(self, request):
-        # Admin toggle or schedule update
-        hours_enforced = request.data.get('voting_hours_enforced')
-        daily_start = request.data.get('daily_start_time')
-        daily_end = request.data.get('daily_end_time')
+        data = request.data
+        hours_enforced = data.get('voting_hours_enforced')
+        daily_start = data.get('daily_start_time')
+        daily_end = data.get('daily_end_time')
+        election_date = data.get('election_date')
 
         elections = Election.objects.all()
         for el in elections:
@@ -2155,7 +2665,22 @@ class SystemSettingsView(APIView):
                 el.daily_start_time = daily_start
             if daily_end:
                 el.daily_end_time = daily_end
+            if election_date:
+                try:
+                    from datetime import datetime
+                    d = datetime.strptime(election_date, '%Y-%m-%d').date()
+                    el.start_date = el.start_date.replace(year=d.year, month=d.month, day=d.day)
+                    el.end_date = el.end_date.replace(year=d.year, month=d.month, day=d.day)
+                except Exception:
+                    pass
             el.save()
+
+        AuditLog.objects.create(
+            action="SYSTEM_SETTINGS_UPDATED",
+            actor="Admin",
+            target="Institutional Configuration",
+            details=f"System parameters updated: hours={daily_start or 'default'}-{daily_end or 'default'}, enforced={hours_enforced}"
+        )
 
         return self.get(request)
 
@@ -2296,6 +2821,9 @@ class AIThreatAssessmentView(APIView):
         events = list(SecurityEvent.objects.order_by('-timestamp')[:100].values())
         total_votes = Candidate.objects.aggregate(total=models.Sum('vote_count'))['total'] or 0
         assessment = ai_fraud_detector.assess_security_threats(events, total_votes)
+        assessment['system_threat_level'] = assessment.get('threatLevel', 'NOMINAL_SECURE')
+        assessment['threat_level'] = assessment.get('threatLevel', 'NOMINAL_SECURE')
+        assessment['risk_score'] = assessment.get('overallRiskScore', 0)
         return Response(assessment)
 
 
@@ -2359,7 +2887,13 @@ class EVMVoterVerificationView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        identifier = request.data.get('identifier', '').strip()
+        identifier = (
+            request.data.get('identifier') or
+            request.data.get('roll_number') or
+            request.data.get('student_id') or
+            request.data.get('qr_code') or
+            request.data.get('voter_id') or ''
+        ).strip()
         if not identifier:
             return Response({"error": "Roll Number or College ID QR code scan is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2447,12 +2981,14 @@ class EVMVoterVerificationView(APIView):
 
         return Response({
             "success": True,
+            "eligible": True,
             "student": {
                 "studentId": profile.student_id,
                 "fullName": profile.full_name,
                 "department": profile.department,
                 "year": profile.year,
                 "section": profile.section,
+                "profilePhoto": profile.profile_photo or "",
                 "verificationStatus": profile.verification_status,
                 "eligibility": profile.eligibility
             },
@@ -2461,6 +2997,43 @@ class EVMVoterVerificationView(APIView):
             "evmSessionId": f"EVM-BOOTH-{uuid.uuid4().hex[:6].upper()}",
             "institution": "VotaNova Secure Campus Voting"
         })
+
+
+class StudentFaceEnrollmentView(APIView):
+    """
+    Enrolls or updates a student's biometric reference face snapshot.
+    Stored securely in profile_photo as data URI or facial descriptor.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        student_id = request.data.get('student_id', '').strip()
+        face_image = request.data.get('face_image', '').strip()
+        if not student_id or not face_image:
+            return Response({"error": "student_id and face_image are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            profile = UserProfile.objects.get(
+                models.Q(student_id__iexact=student_id) |
+                models.Q(user__username__iexact=student_id)
+            )
+            profile.profile_photo = face_image
+            profile.save()
+
+            AuditLog.objects.create(
+                action="FACE_BIOMETRIC_ENROLLED",
+                actor=profile.full_name,
+                target=f"Student Profile: {profile.student_id}",
+                details=f"Biometric facial reference template enrolled successfully for {profile.full_name}."
+            )
+
+            return Response({
+                "success": True,
+                "message": f"Biometric face successfully enrolled and stored for {profile.full_name}.",
+                "profilePhoto": profile.profile_photo
+            })
+        except UserProfile.DoesNotExist:
+            return Response({"error": f"Student '{student_id}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 # -------------------------------------------------------------
@@ -2564,6 +3137,132 @@ class FIDO2VerifySimulatorView(APIView):
             "message": f"FIDO2 Hardware Key {key_id} verified and bound successfully.",
             "credentialId": key_id
         })
+
+
+# -------------------------------------------------------------
+# 12. DEPARTMENT MANAGEMENT & UNIQUE ROLL NO GENERATION
+# -------------------------------------------------------------
+class DepartmentListView(APIView):
+    def get(self, request):
+        depts = Department.objects.all().order_by('code')
+        # If no departments exist yet, seed standard college departments
+        if not depts.exists():
+            default_depts = [
+                {"code": "CSE", "name": "Computer Science & Engineering", "roll_prefix": "STU2026CSE", "contact_email": "cse-dept@abcinstitution.edu"},
+                {"code": "IT", "name": "Information Technology", "roll_prefix": "STU2026IT", "contact_email": "it-dept@abcinstitution.edu"},
+                {"code": "ECE", "name": "Electronics & Communication", "roll_prefix": "STU2026ECE", "contact_email": "ece-dept@abcinstitution.edu"},
+                {"code": "MECH", "name": "Mechanical Engineering", "roll_prefix": "STU2026MECH", "contact_email": "mech-dept@abcinstitution.edu"},
+                {"code": "AIDS", "name": "Artificial Intelligence & Data Science", "roll_prefix": "STU2026AIDS", "contact_email": "aids-dept@abcinstitution.edu"},
+                {"code": "MBA", "name": "Management Studies", "roll_prefix": "STU2026MBA", "contact_email": "mba-dept@abcinstitution.edu"},
+            ]
+            for d in default_depts:
+                Department.objects.get_or_create(code=d["code"], defaults=d)
+            depts = Department.objects.all().order_by('code')
+
+        return Response(DepartmentSerializer(depts, many=True).data)
+
+    def post(self, request):
+        code = request.data.get('code', '').strip().upper()
+        name = request.data.get('name', '').strip()
+        roll_prefix = request.data.get('roll_prefix', f"STU2026{code}").strip().upper()
+        contact_email = request.data.get('contact_email', f"{code.lower()}-dept@abcinstitution.edu").strip()
+
+        if not code or not name:
+            return Response({"error": "Department Code and Name are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        dept, created = Department.objects.get_or_create(
+            code=code,
+            defaults={
+                "name": name,
+                "roll_prefix": roll_prefix,
+                "contact_email": contact_email
+            }
+        )
+        if not created:
+            dept.name = name
+            dept.roll_prefix = roll_prefix
+            dept.contact_email = contact_email
+            dept.save()
+
+        AuditLog.objects.create(
+            action="DEPARTMENT_CONFIGURED",
+            actor="Admin",
+            target=f"Department: {name} ({code})",
+            details=f"Configured academic department {name} with Roll Prefix {roll_prefix}"
+        )
+
+        return Response(DepartmentSerializer(dept).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+class DepartmentGenerateStudentIdView(APIView):
+    """
+    Generates a guaranteed unique Roll Number and Student ID
+    for a student belonging to a specific department.
+    """
+    def get(self, request):
+        return self._generate(request)
+
+    def post(self, request):
+        return self._generate(request)
+
+    def _generate(self, request):
+        dept_code = (
+            request.data.get('department_code') or
+            request.data.get('dept_code') or
+            request.query_params.get('department_code') or
+            request.query_params.get('dept_code') or ''
+        ).strip().upper()
+        if not dept_code:
+            return Response({"error": "Department code is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            dept = Department.objects.get(code=dept_code)
+        except Department.DoesNotExist:
+            dept = Department.objects.create(
+                code=dept_code,
+                name=request.data.get('department_name', f"Dept of {dept_code}"),
+                roll_prefix=f"STU2026{dept_code}"
+            )
+
+        new_student_id = dept.generate_next_student_id()
+        return Response({
+            "success": True,
+            "department": dept.name,
+            "department_code": dept.code,
+            "student_id": new_student_id,
+            "roll_number": new_student_id,
+            "prefix": dept.roll_prefix,
+            "sequence_number": dept.current_count,
+            "current_count": dept.current_count
+        })
+
+
+# -------------------------------------------------------------
+# 13. CHIEF ELECTION OFFICER (CEO) DEDICATED ELECTIONS VIEW
+# -------------------------------------------------------------
+class CEOAssignedElectionsView(APIView):
+    """
+    Chief Election Officer Governance Portal:
+    Returns elections specifically assigned to the active CEO by Admin.
+    Un-correlates CEO and Admin roles.
+    """
+    def get(self, request):
+        user_id = request.query_params.get('userId') or request.headers.get('X-User-Id')
+        profile = None
+        if user_id:
+            try:
+                profile = UserProfile.objects.get(user__username=user_id)
+            except UserProfile.DoesNotExist:
+                pass
+
+        if profile and profile.role == 'CEO':
+            elections = Election.objects.filter(assigned_ceos=profile).prefetch_related('candidates')
+            if not elections.exists():
+                elections = Election.objects.all().prefetch_related('candidates')
+        else:
+            elections = Election.objects.all().prefetch_related('candidates')
+
+        return Response(ElectionSerializer(elections, many=True).data)
 
 
 

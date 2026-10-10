@@ -10,7 +10,7 @@ export function EVMBlockchain() {
     async function loadChain() {
       try {
         const res = await api.blockchain.getChain();
-        setChain(res.data?.chain || []);
+        setChain(Array.isArray(res) ? res : res?.chain || res?.blocks || []);
       } catch (err) {
         console.error('Error fetching blockchain:', err);
       } finally {

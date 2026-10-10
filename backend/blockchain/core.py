@@ -502,6 +502,45 @@ class AuditBlockchain:
         self.save_to_disk()
         return True
 
+    def delete_and_heal_block(self, block_index: int) -> Tuple[bool, str, Optional[AuditBlock]]:
+        """
+        Deletes a specific block (index > 0) and heals the cryptographic hash chain:
+        - Excises block at block_index
+        - Re-links subsequent blocks so previous_hash points to preceding block
+        - Re-indexes blocks (index = index - 1)
+        - Recomputes SHA-3 Merkle roots and block header hashes
+        - Removes associated transaction nullifiers from used pool
+        - Persists healed ledger to disk
+        """
+        if block_index <= 0:
+            return False, "Cannot delete Genesis Root Block #0 (Immutable Chain Anchor)", None
+        if block_index >= len(self.chain):
+            return False, f"Block index #{block_index} does not exist (Current height: #{len(self.chain)})", None
+
+        removed_block = self.chain.pop(block_index)
+
+        # Evict nullifiers from removed block's transactions
+        for tx in getattr(removed_block, 'transactions', []):
+            if isinstance(tx, dict):
+                nullifier = tx.get('nullifier_hash')
+                if nullifier and nullifier in self.used_nullifiers:
+                    self.used_nullifiers.discard(nullifier)
+
+        # Heal and re-link all subsequent blocks seamlessly
+        for i in range(block_index, len(self.chain)):
+            block = self.chain[i]
+            block.index = i
+            block.previous_hash = self.chain[i - 1].hash
+            for tx in block.transactions:
+                if isinstance(tx, dict):
+                    tx['block_index'] = i
+            tree = MerkleTree(block.transactions)
+            block.merkle_root = tree.root_hash
+            block.hash = block.calculate_hash()
+
+        self.save_to_disk()
+        return True, f"Block #{block_index} successfully deleted. Blockchain healed: subsequent blocks re-linked with updated cryptographic hashes.", removed_block
+
     def get_transaction_receipt(self, identifier: str) -> Optional[Dict[str, Any]]:
         """
         Locates transaction by tx_id, anonymous_vote_id, vote_hash, or nullifier_hash.

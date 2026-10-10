@@ -20,7 +20,8 @@ import {
   UserPlus,
   Monitor,
   QrCode,
-  Radio
+  Radio,
+  Building2
 } from 'lucide-react';
 
 export function AdminSidebar() {
@@ -29,28 +30,25 @@ export function AdminSidebar() {
       title: 'CORE MANAGEMENT',
       items: [
         { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/admin/students', label: 'Students Directory', icon: Users },
-        { path: '/admin/evm-users', label: 'EVM Users / Kiosks', icon: Monitor },
-        { path: '/admin/id-cards', label: 'Student ID Cards', icon: QrCode },
-        { path: '/admin/verification', label: 'ID Verification', icon: FileCheck2 },
-        { path: '/admin/elections', label: 'Elections', icon: Vote },
-        { path: '/admin/candidates', label: 'Candidates', icon: UserPlus },
-        { path: '/admin/voters', label: 'Voter Registry', icon: UserCheck },
+        { path: '/admin/students', label: 'Students & Voters', icon: Users },
+        { path: '/admin/evm-users', label: 'EVM Terminals', icon: Monitor },
+        { path: '/admin/verification', label: 'ID Verification & Cards', icon: FileCheck2 },
+        { path: '/admin/elections', label: 'Elections & Ballots', icon: Vote },
+        { path: '/admin/candidates', label: 'Candidate Profiles', icon: UserPlus },
+        { path: '/admin/departments', label: 'Depts & Roll Sequence', icon: Building2 },
       ]
     },
     {
       title: 'BFT AUDIT BLOCKCHAIN',
       items: [
-        { path: '/admin/blockchain', label: 'Audit Explorer', icon: Box },
-        { path: '/admin/blocks', label: 'Audit Block Ledger', icon: Layers },
+        { path: '/admin/blockchain', label: 'Audit Explorer Suite', icon: Box },
+        { path: '/admin/blocks', label: 'Block Ledger & Miner', icon: Layers },
         { path: '/admin/transactions', label: 'Transactions', icon: ArrowLeftRight },
-        { path: '/admin/merkle-tree', label: 'SHA-3 Merkle Tree', icon: GitFork },
-        { path: '/admin/network', label: 'BFT Multi-Witness Mesh', icon: Network },
-        { path: '/admin/validation', label: 'Chain Integrity Auditor', icon: CheckCircle2 },
+        { path: '/admin/validation', label: 'Consensus & Integrity', icon: CheckCircle2 },
       ]
     },
     {
-      title: 'SECURITY & RESULTS',
+      title: 'SECURITY & GOVERNANCE',
       items: [
         { path: '/admin/access-control', label: 'Campus Access Gateway', icon: Radio },
         { path: '/admin/results', label: 'Certified Results', icon: BarChart3 },

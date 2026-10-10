@@ -21,7 +21,10 @@ import {
   Sliders,
   Play,
   Pause,
-  CheckCheck
+  CheckCheck,
+  Crown,
+  Mail,
+  GraduationCap
 } from 'lucide-react';
 
 const DEPARTMENTS = [
@@ -36,6 +39,7 @@ const DEPARTMENTS = [
 
 export function AdminElections() {
   const [elections, setElections] = useState([]);
+  const [ceoList, setCeoList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingElection, setEditingElection] = useState(null);
@@ -56,6 +60,11 @@ export function AdminElections() {
     voting_hours_enforced: true,
     camera_required: true,
     id_verification_required: true,
+    assigned_ceos: [],
+    min_cgpa: 6.0,
+    min_attendance: 75.0,
+    disciplinary_clearance_required: true,
+    eligible_years: '1,2,3,4',
     rules: '1. Controlled session required.\n2. Do not switch browser tabs.\n3. Single cryptographic vote per verified student.'
   };
   const [formData, setFormData] = useState(initialForm);
@@ -74,6 +83,15 @@ export function AdminElections() {
 
   useEffect(() => {
     fetchElections();
+    async function loadCEOs() {
+      try {
+        const ceos = await api.ceo.listCEOs();
+        setCeoList(Array.isArray(ceos) ? ceos : ceos.results || []);
+      } catch (e) {
+        console.warn("Could not load CEOs list:", e);
+      }
+    }
+    loadCEOs();
   }, []);
 
   const handleOpenAdd = () => {
@@ -100,6 +118,13 @@ export function AdminElections() {
       voting_hours_enforced: el.voting_hours_enforced ?? true,
       camera_required: el.camera_required,
       id_verification_required: el.id_verification_required,
+      assigned_ceos: Array.isArray(el.assigned_ceos)
+        ? el.assigned_ceos
+        : (el.assigned_ceos_details?.map(c => c.id) || []),
+      min_cgpa: el.min_cgpa ?? 6.0,
+      min_attendance: el.min_attendance ?? 75.0,
+      disciplinary_clearance_required: el.disciplinary_clearance_required ?? true,
+      eligible_years: el.eligible_years || '1,2,3,4',
       rules: el.rules
     });
     setShowModal(true);
@@ -291,6 +316,54 @@ export function AdminElections() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Vote size={14} color="#10b981" />
                     <span>Total Ballots Finalized: <strong>{el.total_votes || 0}</strong></span>
+                  </div>
+
+                  {/* Assigned Commission CEOs */}
+                  {el.assigned_ceos_details && el.assigned_ceos_details.length > 0 && (
+                    <div style={{
+                      marginTop: '4px',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      background: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                      fontSize: '0.74rem',
+                      color: '#92400e'
+                    }}>
+                      <Crown size={14} color="#d97706" style={{ flexShrink: 0 }} />
+                      <div>
+                        <strong>Assigned CEOs: </strong>
+                        {el.assigned_ceos_details.map(c => c.name || c.username).join(', ')}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Statutory Eligibility Criteria */}
+                  <div style={{ marginTop: '4px', paddingTop: '6px', borderTop: '1px dashed #e2e8f0' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Statutory Eligibility Rules:
+                    </div>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.69rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px', background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }}>
+                        Min CGPA: {el.min_cgpa ?? '6.0'}
+                      </span>
+                      <span style={{ fontSize: '0.69rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}>
+                        Attendance: ≥{el.min_attendance ?? '75'}%
+                      </span>
+                      {el.disciplinary_clearance_required && (
+                        <span style={{ fontSize: '0.69rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                          Clean Record
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Department Mail Broadcast */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#0284c7', marginTop: '2px' }}>
+                    <Mail size={13} />
+                    <span>Dept Notice: <strong>{el.dept_notifications_sent ? 'Broadcast Dispatched' : 'Auto Broadcast on Plan'}</strong></span>
                   </div>
                 </div>
               </div>
@@ -484,6 +557,99 @@ export function AdminElections() {
                     <option value="true">Enforce Live Camera</option>
                     <option value="false">Optional</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Multi-CEO Commission Assignment */}
+              <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '12px', padding: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <Crown size={16} color="#d97706" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#92400e', textTransform: 'uppercase' }}>
+                    Assign Commission Chief Election Officers (Multi-CEO Governance)
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {ceoList.length === 0 ? (
+                    <div style={{ fontSize: '0.76rem', color: '#b45309' }}>
+                      Default assigned to central Commission directorates (ceo_central, ceo_deputy).
+                    </div>
+                  ) : (
+                    ceoList.map((ceo) => {
+                      const isAssigned = (formData.assigned_ceos || []).includes(ceo.id);
+                      return (
+                        <label key={ceo.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', color: '#78350f' }}>
+                          <input
+                            type="checkbox"
+                            checked={isAssigned}
+                            onChange={(e) => {
+                              const current = formData.assigned_ceos || [];
+                              const updated = e.target.checked
+                                ? [...current, ceo.id]
+                                : current.filter(id => id !== ceo.id);
+                              setFormData({ ...formData, assigned_ceos: updated });
+                            }}
+                            style={{ accentColor: '#d97706', width: '16px', height: '16px' }}
+                          />
+                          <span><strong>{ceo.name}</strong> ({ceo.username}) &middot; {ceo.email}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Statutory Eligibility Criteria */}
+              <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <ShieldCheck size={16} color="#0284c7" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0369a1', textTransform: 'uppercase' }}>
+                    Statutory Eligibility Framework
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '3px' }}>
+                      Minimum CGPA Cutoff
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      className="input-field"
+                      value={formData.min_cgpa}
+                      onChange={(e) => setFormData({ ...formData, min_cgpa: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '3px' }}>
+                      Minimum Attendance %
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      className="input-field"
+                      value={formData.min_attendance}
+                      onChange={(e) => setFormData({ ...formData, min_attendance: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.8rem', color: '#334155' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.disciplinary_clearance_required}
+                      onChange={(e) => setFormData({ ...formData, disciplinary_clearance_required: e.target.checked })}
+                      style={{ accentColor: '#0284c7', width: '16px', height: '16px' }}
+                    />
+                    <span>Enforce Disciplinary Clearance (Zero Violations)</span>
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    Auto-Dispatches Department Notice Email
+                  </span>
                 </div>
               </div>
 

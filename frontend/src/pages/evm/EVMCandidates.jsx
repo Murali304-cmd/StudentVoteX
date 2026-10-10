@@ -10,7 +10,7 @@ export function EVMCandidates() {
     async function loadCandidates() {
       try {
         const res = await api.candidates.list();
-        setCandidates(res.data?.results || res.data || []);
+        setCandidates(Array.isArray(res) ? res : res?.results || res?.data || []);
       } catch (err) {
         console.error('Error fetching candidates:', err);
       } finally {

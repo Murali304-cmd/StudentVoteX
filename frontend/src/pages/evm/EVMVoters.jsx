@@ -11,7 +11,7 @@ export function EVMVoters() {
     async function loadStudents() {
       try {
         const res = await api.students.list();
-        setStudents(res.data?.results || res.data || []);
+        setStudents(Array.isArray(res) ? res : res?.results || res?.data || []);
       } catch (err) {
         console.error('Error fetching students:', err);
       } finally {

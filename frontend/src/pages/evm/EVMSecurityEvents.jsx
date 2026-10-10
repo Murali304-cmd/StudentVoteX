@@ -9,8 +9,8 @@ export function EVMSecurityEvents() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const res = await api.securityEvents.list();
-        setEvents(res.data?.results || res.data || []);
+        const res = await api.security.list();
+        setEvents(res?.events || (Array.isArray(res) ? res : res?.results || []));
       } catch (err) {
         console.error('Error fetching security events:', err);
       } finally {

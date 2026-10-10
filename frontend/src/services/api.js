@@ -66,6 +66,10 @@ export const api = {
     registerFIDO2: (username, keyId) => request('/auth/mfa/fido2/', {
       method: 'POST',
       body: JSON.stringify({ username, keyId })
+    }),
+    supportRequest: (data) => request('/auth/support-request/', {
+      method: 'POST',
+      body: JSON.stringify(data)
     })
   },
 
@@ -127,6 +131,10 @@ export const api = {
       emitBackgroundEvent(BG_EVENTS.ID_VERIFIED);
       return res;
     },
+    enrollFace: (studentId, faceImage) => request('/student/enroll-face/', {
+      method: 'POST',
+      body: JSON.stringify({ student_id: studentId, face_image: faceImage })
+    }),
     list: (params = {}) => {
       const query = new URLSearchParams(params).toString();
       return request(`/admin/verifications/${query ? '?' + query : ''}`);
@@ -166,9 +174,17 @@ export const api = {
       const query = new URLSearchParams(params).toString();
       return request(`/candidates/${query ? '?' + query : ''}`);
     },
+    get: (id) => request(`/candidates/${id}/`),
     create: (data) => request('/candidates/', {
       method: 'POST',
       body: JSON.stringify(data)
+    }),
+    update: (id, data) => request(`/candidates/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    delete: (id) => request(`/candidates/${id}/`, {
+      method: 'DELETE'
     })
   },
 
@@ -202,7 +218,9 @@ export const api = {
   blockchain: {
     getStats: () => request('/blockchain/stats/'),
     getBlocks: () => request('/blockchain/blocks/'),
+    blocks: () => request('/blockchain/blocks/'),
     getBlock: (index) => request(`/blockchain/blocks/${index}/`),
+    deleteBlock: (index) => request(`/blockchain/blocks/${index}/`, { method: 'DELETE' }),
     getTransactions: (search = '') => request(`/blockchain/transactions/${search ? '?search=' + encodeURIComponent(search) : ''}`),
     getMerkleTree: async (blockIndex) => {
       const res = await request(`/blockchain/merkle-tree/${blockIndex}/`);
@@ -280,14 +298,34 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ identifier })
     })
+  },
+
+  departments: {
+    list: () => request('/departments/'),
+    create: (data) => request('/departments/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    generateId: (deptCode) => request('/departments/generate-id/', {
+      method: 'POST',
+      body: JSON.stringify({ department_code: deptCode })
+    })
+  },
+
+  ceo: {
+    getAssignedElections: (userId) => request(`/ceo/assigned-elections/${userId ? '?userId=' + encodeURIComponent(userId) : ''}`),
+    listCEOs: () => request('/admin/students/?role=CEO')
   }
 };
 
 // Compatibility aliases
 api.verification = api.verifications;
+api.verification.update = (id, data) => api.verifications.review(id, data);
+api.securityEvents = api.security;
 api.audit = {
   list: (params = {}) => api.admin.getAuditLogs(params)
 };
+api.auditLogs = api.audit;
 api.blockchain.getChain = api.blockchain.getBlocks;
 api.blockchain.blocks = api.blockchain.getBlocks;
 api.blockchain.transactions = api.blockchain.getTransactions;

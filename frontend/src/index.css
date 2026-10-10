@@ -2,7 +2,7 @@
    VoteChain - Pure Light Mode Futuristic Design System (ABC Institution)
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
   /* Clean Light Theme Tokens */
@@ -53,7 +53,7 @@
   --shadow-indigo-glow: 0 4px 20px -2px rgba(79, 70, 229, 0.18);
 
   /* Font Families */
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Outfit', var(--font-sans);
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -606,6 +606,22 @@ code, pre, .font-mono {
   }
 }
 
+@keyframes svxCircleRoll {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.svx-circle-roller {
+  border-radius: 50%;
+  animation: svxCircleRoll 0.8s linear infinite;
+  box-sizing: border-box;
+  display: inline-block;
+}
+
 @keyframes svxOrbitSpin {
   0% {
     transform: rotate(0deg);
@@ -624,6 +640,55 @@ code, pre, .font-mono {
   }
 }
 
+@keyframes svxCounterSpin {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes svxScanBar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes svxGlowBreath {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes svxRadarSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes svxNodePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  }
+  50% {
+    transform: scale(1.3);
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.95);
+  }
+}
+
 .svx-zoom-in-out {
   animation: svxZoomInOut 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
@@ -633,13 +698,34 @@ code, pre, .font-mono {
 }
 
 .svx-orbit-spin {
-  animation: svxOrbitSpin 6s linear infinite;
+  animation: svxOrbitSpin 12s linear infinite;
+}
+
+.svx-counter-spin {
+  animation: svxCounterSpin 8s linear infinite;
+}
+
+.svx-radar-sweep {
+  animation: svxRadarSweep 4s linear infinite;
+}
+
+.svx-scan-bar {
+  animation: svxScanBar 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.svx-glow-breath {
+  animation: svxGlowBreath 3s ease-in-out infinite;
+}
+
+.svx-node-pulse {
+  animation: svxNodePulse 1.8s ease-in-out infinite;
 }
 
 .svx-shimmer-text {
   background: linear-gradient(90deg, #0284c7 0%, #a855f7 30%, #38bdf8 60%, #0284c7 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: svxShimmerText 3s linear infinite;
   font-weight: 800;
@@ -661,7 +747,6 @@ code, pre, .font-mono {
 .evm-kiosk-protected button,
 .evm-kiosk-protected div {
   -webkit-user-drag: none !important;
-  user-drag: none !important;
 }
 
 /* Obfuscate screen content on printing */

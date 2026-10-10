@@ -59,8 +59,6 @@ export function CEODashboard() {
 
   useEffect(() => {
     fetchMacroData();
-    const interval = setInterval(fetchMacroData, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleToggleFreeze = () => {
@@ -169,21 +167,61 @@ export function CEODashboard() {
           {/* Quick Action Master Controls */}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <button
+              onClick={fetchMacroData}
+              className="btn btn-secondary"
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                fontWeight: 700,
+                fontSize: '0.84rem',
+                padding: '10px 16px',
+                borderRadius: '12px'
+              }}
+              title="Refresh Telemetry on demand"
+            >
+              <Sparkles size={15} />
+              <span>Refresh Data</span>
+            </button>
+
+            <Link
+              to="/ceo/certificates"
+              className="btn"
+              style={{
+                background: '#ffffff',
+                color: '#78350f',
+                fontWeight: 800,
+                fontSize: '0.84rem',
+                padding: '10px 18px',
+                borderRadius: '12px',
+                border: 'none',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                textDecoration: 'none'
+              }}
+            >
+              <Printer size={16} />
+              <span>Official Certificates</span>
+            </Link>
+
+            <button
               onClick={() => setShowFreezeModal(true)}
               className="btn"
               style={{
-                background: emergencyFrozen ? '#ef4444' : '#ffffff',
-                color: emergencyFrozen ? '#ffffff' : '#78350f',
+                background: emergencyFrozen ? '#ef4444' : 'rgba(255,255,255,0.2)',
+                color: '#ffffff',
                 fontWeight: 800,
                 fontSize: '0.86rem',
                 padding: '10px 18px',
                 borderRadius: '12px',
-                border: 'none',
+                border: '1px solid rgba(255,255,255,0.4)',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
               }}
             >
               {emergencyFrozen ? <Lock size={16} /> : <Unlock size={16} />}
-              <span>{emergencyFrozen ? '⚠️ ELECTIONS FROZEN' : '⚡ Master Freeze Switch'}</span>
+              <span>{emergencyFrozen ? '⚠️ ELECTIONS FROZEN' : '⚡ Emergency Freeze'}</span>
             </button>
 
             <button
@@ -202,7 +240,7 @@ export function CEODashboard() {
               }}
             >
               <Award size={16} />
-              <span>{isCertified ? '✓ Official Results Certified' : '📜 Certify & Sign Election'}</span>
+              <span>{isCertified ? '✓ Results Certified' : '📜 Certify & Sign Election'}</span>
             </button>
           </div>
         </div>
@@ -374,14 +412,14 @@ export function CEODashboard() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={() => window.print()}
+            <Link
+              to="/ceo/certificates"
               className="btn btn-secondary"
-              style={{ fontSize: '0.78rem', padding: '8px 14px' }}
+              style={{ fontSize: '0.78rem', padding: '8px 14px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <Printer size={14} />
-              <span>Print Decree</span>
-            </button>
+              <span>Issue Official Certificate</span>
+            </Link>
           </div>
         </div>
       )}

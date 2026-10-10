@@ -9,8 +9,8 @@ export function EVMAuditLogs() {
   useEffect(() => {
     async function loadLogs() {
       try {
-        const res = await api.auditLogs.list();
-        setLogs(res.data?.results || res.data || []);
+        const res = await api.admin.getAuditLogs();
+        setLogs(Array.isArray(res) ? res : res?.results || []);
       } catch (err) {
         console.error('Error fetching audit logs:', err);
       } finally {

@@ -18,8 +18,9 @@ export function StudentCandidates() {
     async function loadData() {
       try {
         const res = await api.elections.get(id || 1);
-        setElection(res.data);
-        setCandidates(res.data?.candidates || []);
+        const electionData = res?.data || res;
+        setElection(electionData);
+        setCandidates(electionData?.candidates || []);
       } catch (err) {
         console.error('Error fetching election candidates:', err);
       } finally {
@@ -134,10 +135,15 @@ export function StudentCandidates() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '1.8rem',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
+                      overflow: 'hidden',
+                      border: '1px solid #cbd5e1'
                     }}
                   >
-                    {c.election_symbol || '★'}
+                    {c.symbol_image ? (
+                      <img src={c.symbol_image} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      c.election_symbol || '★'
+                    )}
                   </div>
 
                   <span

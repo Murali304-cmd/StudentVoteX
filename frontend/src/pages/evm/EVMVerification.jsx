@@ -9,8 +9,8 @@ export function EVMVerification() {
   useEffect(() => {
     async function loadVerifications() {
       try {
-        const res = await api.verification.list();
-        setVerifications(res.data?.results || res.data || []);
+        const res = await api.verifications.list();
+        setVerifications(Array.isArray(res) ? res : res?.results || []);
       } catch (err) {
         console.error('Error fetching verifications:', err);
       } finally {
@@ -22,7 +22,7 @@ export function EVMVerification() {
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await api.verification.update(id, { status });
+      await api.verifications.review(id, { status });
       setVerifications((prev) => prev.map((v) => (v.id === id ? { ...v, status } : v)));
     } catch (err) {
       alert('Error updating status: ' + err.message);

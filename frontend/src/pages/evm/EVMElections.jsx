@@ -10,7 +10,7 @@ export function EVMElections() {
     async function fetchElections() {
       try {
         const res = await api.elections.list();
-        setElections(res.data?.results || res.data || []);
+        setElections(Array.isArray(res) ? res : res?.results || res?.data || []);
       } catch (err) {
         console.error('Error:', err);
       } finally {
