@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useInstitution } from '../context/InstitutionContext';
 import { StudentVoiceXLogo } from './StudentVoiceXLogo';
 import {
   LayoutDashboard,
@@ -14,11 +15,13 @@ import {
   FileText,
   LogOut,
   Monitor,
-  UserCheck
+  UserCheck,
+  Sliders
 } from 'lucide-react';
 
 export function EVMLayout() {
   const { user, logout } = useAuth();
+  const { institutionName } = useInstitution();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -36,7 +39,8 @@ export function EVMLayout() {
     { label: 'Results', path: '/evm/results', icon: BarChart3 },
     { label: 'Security Events', path: '/evm/security-events', icon: AlertTriangle },
     { label: 'Blockchain', path: '/evm/blockchain', icon: Blocks },
-    { label: 'Audit Logs', path: '/evm/audit-logs', icon: FileText }
+    { label: 'Audit Logs', path: '/evm/audit-logs', icon: FileText },
+    { label: 'Terminal Settings', path: '/evm/settings', icon: Sliders }
   ];
 
   return (
@@ -47,8 +51,11 @@ export function EVMLayout() {
         height: '100vh',
         maxHeight: '100vh',
         overflow: 'hidden',
-        background: '#f8fafc',
-        color: '#0f172a'
+        background: 'radial-gradient(ellipse at 15% 15%, rgba(2, 132, 199, 0.05) 0%, transparent 60%), radial-gradient(ellipse at 85% 85%, rgba(99, 102, 241, 0.05) 0%, transparent 60%), var(--bg-main-translucent)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        color: 'var(--text-primary)',
+        transition: 'background 0.3s ease'
       }}
     >
       {/* Sidebar (No external scroll) */}
@@ -57,8 +64,10 @@ export function EVMLayout() {
           width: '250px',
           height: '100vh',
           maxHeight: '100vh',
-          background: '#ffffff',
-          borderRight: '1px solid #e2e8f0',
+          background: 'var(--bg-surface-translucent)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -74,7 +83,7 @@ export function EVMLayout() {
               size={32}
               showText={true}
               showTagline={false}
-              institutionLabel="ABC INSTITUTION"
+              institutionLabel={institutionName ? institutionName.toUpperCase() : "ABC INSTITUTION"}
               isDark={false}
             />
             <div

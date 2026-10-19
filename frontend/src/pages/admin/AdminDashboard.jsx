@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useInstitution } from '../../context/InstitutionContext';
 import { api } from '../../services/api';
 import { StudentVoiceXLoader } from '../../components/common/StudentVoiceXLoader';
 import {
@@ -28,10 +29,12 @@ import {
   Lock,
   RefreshCw,
   Gauge,
-  Key
+  Key,
+  Database
 } from 'lucide-react';
 
 export function AdminDashboard() {
+  const { institutionName } = useInstitution();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [securityEvents, setSecurityEvents] = useState([]);
@@ -134,7 +137,7 @@ export function AdminDashboard() {
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#0284c7', fontWeight: 700 }}>
                   <Building2 size={13} />
-                  ABC INSTITUTION
+                  {(institutionName || 'ABC INSTITUTION').toUpperCase()}
                 </span>
                 <span>•</span>
                 <span style={{ color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -490,6 +493,62 @@ export function AdminDashboard() {
           </div>
         </div>
 
+      </div>
+
+      {/* ── Relational Database Intelligence Banner ── */}
+      <div
+        className="glass-card"
+        style={{
+          padding: '20px 24px',
+          background: 'linear-gradient(135deg, rgba(8, 14, 28, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          border: '1px solid rgba(56, 189, 248, 0.25)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              background: 'rgba(56, 189, 248, 0.15)',
+              color: '#38bdf8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid rgba(56, 189, 248, 0.3)'
+            }}
+          >
+            <Database size={24} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#fff', margin: 0 }}>
+                Relational Database Intelligence &amp; SQL Studio
+              </h3>
+              <span style={{ fontSize: '0.66rem', fontFamily: 'var(--font-mono)', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', padding: '2px 7px', borderRadius: '4px', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                SQLITE 3 ONLINE
+              </span>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: '#94a3b8', marginTop: '2px' }}>
+              26 relational tables &bull; Integrity: 100% OK &bull; Instant SQL query execution &bull; Database backups
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Link
+            to="/admin/database"
+            className="btn btn-primary"
+            style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+          >
+            Launch Database Explorer <ArrowRight size={14} />
+          </Link>
+        </div>
       </div>
 
     </div>

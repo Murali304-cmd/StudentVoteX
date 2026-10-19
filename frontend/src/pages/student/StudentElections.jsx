@@ -172,14 +172,24 @@ export function StudentElections() {
                   </p>
                 </div>
 
-                <Link
-                  to="/student/voting-session"
-                  className="btn btn-primary"
-                  style={{ padding: '10px 22px', fontSize: '0.9rem' }}
-                >
-                  <Vote size={18} />
-                  <span>Launch Voting Chamber</span>
-                </Link>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <Link
+                    to={`/student/elections/${el.id}/candidates`}
+                    className="btn btn-secondary"
+                    style={{ padding: '10px 16px', fontSize: '0.86rem' }}
+                  >
+                    <span>Candidates &amp; Symbols</span>
+                  </Link>
+
+                  <Link
+                    to="/student/voting-session"
+                    className="btn btn-primary"
+                    style={{ padding: '10px 22px', fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <Vote size={18} />
+                    <span>Launch Controlled Chamber</span>
+                  </Link>
+                </div>
               </div>
 
               {/* Candidate Preview Cards */}

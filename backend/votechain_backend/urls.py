@@ -20,10 +20,16 @@ from .views import (
     AdminEVMStationListView, AdminEVMStationDetailView,
     ElectionCertificatesView, StudentMyCertificatesView, PublicCertificateVerifyView,
     StudentFaceEnrollmentView,
-    DepartmentListView, DepartmentGenerateStudentIdView, CEOAssignedElectionsView,
+    DepartmentListView, DepartmentDetailView, DepartmentGenerateStudentIdView, CEOAssignedElectionsView,
+    # Student Sections Portal & Notifications
+    StudentSectionInfoView, StudentNotificationListView, StudentNotificationMarkReadView,
+    StudentCampusRadarView, StudentTownhallQnAView, StudentSectionPollView,
     # Enterprise Auth Endpoints
     MFAEnrollView, MFAVerifyView, FIDO2VerifySimulatorView,
-    InstitutionalSupportRequestView
+    InstitutionalSupportRequestView,
+    # Privileged Admin Relational Database Explorer
+    AdminDatabaseStatsView, AdminDatabaseTableView, AdminDatabaseRawHtmlView,
+    AdminDatabaseQueryView, AdminDatabaseBackupView, AdminDatabaseSchemaView
 )
 
 urlpatterns = [
@@ -40,6 +46,7 @@ urlpatterns = [
 
     path('settings/', SystemSettingsView.as_view(), name='api-settings'),
     path('admin/settings/', SystemSettingsView.as_view(), name='api-admin-settings'),
+    path('institution/settings/', SystemSettingsView.as_view(), name='api-institution-settings'),
 
     # Campus Access Gateway & Device Trust
     path('gateway/check-access/', CampusGatewayCheckView.as_view(), name='gateway-check'),
@@ -50,12 +57,19 @@ urlpatterns = [
 
     # Admin Student Management
     path('admin/students/', AdminStudentListView.as_view(), name='admin-students'),
-    path('admin/students/<int:pk>/', AdminStudentDetailView.as_view(), name='admin-student-detail'),
+    path('admin/students/<str:pk>/', AdminStudentDetailView.as_view(), name='admin-student-detail'),
 
     # ID Verification & Biometric Face Registry
     path('student/id-verification/upload/', StudentIDVerificationUploadView.as_view(), name='student-id-upload'),
     path('student/id-verification/ocr-scan/', StudentIDOCRScanView.as_view(), name='student-ocr-scan'),
     path('student/enroll-face/', StudentFaceEnrollmentView.as_view(), name='student-enroll-face'),
+    path('student/section-info/', StudentSectionInfoView.as_view(), name='student-section-info'),
+    path('student/campus-radar/', StudentCampusRadarView.as_view(), name='student-campus-radar'),
+    path('student/townhall-qna/', StudentTownhallQnAView.as_view(), name='student-townhall-qna'),
+    path('student/section-poll/', StudentSectionPollView.as_view(), name='student-section-poll'),
+    path('student/notifications/', StudentNotificationListView.as_view(), name='student-notifications'),
+    path('student/notifications/<int:pk>/read/', StudentNotificationMarkReadView.as_view(), name='student-notification-read'),
+    path('student/notifications/read-all/', StudentNotificationMarkReadView.as_view(), name='student-notification-read-all'),
     path('admin/verifications/', AdminVerificationListView.as_view(), name='admin-verifications'),
     path('admin/verifications/auto-verify-qr/', AdminAutoVerifyQRView.as_view(), name='admin-verifications-auto-qr'),
     path('admin/verifications/<int:pk>/review/', AdminVerificationReviewView.as_view(), name='admin-verification-review'),
@@ -101,12 +115,22 @@ urlpatterns = [
     # Physical EVM Kiosk Verification & Voting
     path('evm/verify-voter/', EVMVoterVerificationView.as_view(), name='evm-verify-voter'),
     path('admin/evm-stations/', AdminEVMStationListView.as_view(), name='admin-evm-stations'),
-    path('admin/evm-stations/<int:pk>/', AdminEVMStationDetailView.as_view(), name='admin-evm-station-detail'),
+    path('admin/evm-stations/<str:pk>/', AdminEVMStationDetailView.as_view(), name='admin-evm-station-detail'),
 
     # Academic Department Management & Unique Roll ID Sequence
     path('departments/', DepartmentListView.as_view(), name='departments-list'),
+    path('departments/<str:code>/', DepartmentDetailView.as_view(), name='department-detail'),
     path('departments/generate-id/', DepartmentGenerateStudentIdView.as_view(), name='departments-generate-id'),
 
     # Dedicated Chief Election Officer (CEO) Portal Routes
     path('ceo/assigned-elections/', CEOAssignedElectionsView.as_view(), name='ceo-assigned-elections'),
+
+    # Privileged System Admin Relational Database Explorer
+    path('admin/database/stats/', AdminDatabaseStatsView.as_view(), name='admin-database-stats'),
+    path('admin/database/tables/<str:table_name>/', AdminDatabaseTableView.as_view(), name='admin-database-table'),
+    path('admin/database/query/', AdminDatabaseQueryView.as_view(), name='admin-database-query'),
+    path('admin/database/backup/', AdminDatabaseBackupView.as_view(), name='admin-database-backup'),
+    path('admin/database/schema/', AdminDatabaseSchemaView.as_view(), name='admin-database-schema-erd'),
+    path('admin/database/schema/<str:table_name>/', AdminDatabaseSchemaView.as_view(), name='admin-database-schema-table'),
+    path('admin/database/html-view/', AdminDatabaseRawHtmlView.as_view(), name='admin-database-html-view'),
 ]

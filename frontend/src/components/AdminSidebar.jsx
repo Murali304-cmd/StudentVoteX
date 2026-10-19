@@ -21,7 +21,8 @@ import {
   Monitor,
   QrCode,
   Radio,
-  Building2
+  Building2,
+  Database
 } from 'lucide-react';
 
 export function AdminSidebar() {
@@ -36,6 +37,7 @@ export function AdminSidebar() {
         { path: '/admin/elections', label: 'Elections & Ballots', icon: Vote },
         { path: '/admin/candidates', label: 'Candidate Profiles', icon: UserPlus },
         { path: '/admin/departments', label: 'Depts & Roll Sequence', icon: Building2 },
+        { path: '/admin/database', label: 'Database Explorer', icon: Database },
       ]
     },
     {
@@ -54,6 +56,7 @@ export function AdminSidebar() {
         { path: '/admin/results', label: 'Certified Results', icon: BarChart3 },
         { path: '/admin/security-events', label: 'Security Events', icon: ShieldAlert },
         { path: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText },
+        { path: '/admin/database', label: 'Database Explorer', icon: Database },
         { path: '/admin/settings', label: 'System Settings', icon: Sliders },
       ]
     }

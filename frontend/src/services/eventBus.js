@@ -39,6 +39,8 @@ export function emitBackgroundEvent(type, payload = {}) {
   }
 }
 
+export const triggerBackgroundEvent = emitBackgroundEvent;
+
 /**
  * Subscribe to background animation events
  * @param {Function} handler - Callback taking the event detail

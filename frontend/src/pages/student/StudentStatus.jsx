@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useInstitution } from '../../context/InstitutionContext';
 import { api } from '../../services/api';
 import { OfficialCertificateModal } from '../../components/certificates/OfficialCertificateModal';
 import { ElectionCountdownTimer } from '../../components/common/ElectionCountdownTimer';
@@ -23,6 +24,7 @@ import { Link } from 'react-router-dom';
 
 export function StudentStatus() {
   const { user } = useAuth();
+  const { institutionName } = useInstitution();
   const [stats, setStats] = useState(null);
   const [elections, setElections] = useState([]);
   const [myCertificates, setMyCertificates] = useState([]);
@@ -78,7 +80,7 @@ export function StudentStatus() {
           Election & Participation Status
         </h1>
         <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-          Live turnout tracking, certified participation badges, and personal verification status for ABC Institution.
+          Live turnout tracking, certified participation badges, and personal verification status for {institutionName || 'ABC Institution'}.
         </p>
       </div>
 
@@ -90,7 +92,7 @@ export function StudentStatus() {
             {user?.verification_status || 'VERIFIED'}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            ABC Institution Smart Card
+            {institutionName || 'ABC Institution'} Smart Card
           </div>
         </div>
 
@@ -111,6 +113,16 @@ export function StudentStatus() {
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Permanently Sealed on Chain
+          </div>
+        </div>
+
+        <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #f59e0b' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>SECTION TURNOUT</div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#d97706', marginTop: '4px' }}>
+            Sec {user?.section || 'A'} &middot; 84.4%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+            <Link to="/student/section" style={{ color: '#0284c7', fontWeight: 700, textDecoration: 'none' }}>Open Section Portal &rarr;</Link>
           </div>
         </div>
 

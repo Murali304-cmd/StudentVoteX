@@ -11,7 +11,7 @@ from .models import (
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = ['id', 'code', 'name', 'roll_prefix', 'student_id_prefix', 'current_count', 'contact_email', 'created_at']
+        fields = ['id', 'code', 'name', 'roll_prefix', 'student_id_prefix', 'current_count', 'contact_email', 'representative_name', 'representative_roll', 'created_at']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -25,8 +25,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'department', 'year', 'section', 'phone', 'profile_photo',
             'id_card_number', 'id_card_hash', 'id_card_qr_ref', 'eligibility',
             'status', 'verification_status', 'temporary_password', 'cgpa',
-            'attendance', 'disciplinary_clearance', 'mfa_enabled',
-            'hardware_key_registered', 'created_at', 'updated_at'
+            'attendance', 'disciplinary_clearance', 'is_representative', 'representative_title',
+            'mfa_enabled', 'hardware_key_registered', 'created_at', 'updated_at'
         ]
 
 

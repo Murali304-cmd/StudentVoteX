@@ -24,7 +24,8 @@ import {
   CheckCheck,
   Crown,
   Mail,
-  GraduationCap
+  GraduationCap,
+  Trash2
 } from 'lucide-react';
 
 const DEPARTMENTS = [
@@ -151,6 +152,19 @@ export function AdminElections() {
       fetchElections();
     } catch (e) {
       alert("Status update failed: " + e.message);
+    }
+  };
+
+  const handleDeleteElection = async (election) => {
+    if (!confirm(`Are you sure you want to permanently delete election "${election.title}"? This will remove all associated candidates and ballot records.`)) {
+      return;
+    }
+    try {
+      await api.elections.delete(election.id);
+      setElections(prev => prev.filter(e => e.id !== election.id));
+      fetchElections();
+    } catch (e) {
+      alert("Failed to delete election: " + e.message);
     }
   };
 
@@ -281,10 +295,22 @@ export function AdminElections() {
                     </span>
                   </div>
 
-                  <button onClick={() => handleOpenEdit(el)} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
-                    <Edit2 size={13} />
-                    <span>Configure</span>
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={() => handleOpenEdit(el)} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
+                      <Edit2 size={13} />
+                      <span>Configure</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteElection(el)}
+                      className="btn"
+                      style={{ padding: '4px 8px', fontSize: '0.75rem', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca' }}
+                      title="Permanently Delete Election"
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete</span>
+                    </button>
+                  </div>
                 </div>
 
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '6px', color: 'var(--text-primary)' }}>

@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../../services/api';
 import React, { useState, useEffect } from 'react';
+import { useInstitution } from '../../context/InstitutionContext';
 import {
   Sliders,
   ShieldCheck,
@@ -18,14 +19,67 @@ import {
   Radio,
   Eye,
   Sparkles,
-  Zap
+  Zap,
+  Globe,
+  Award,
+  RefreshCw,
+  School
 } from 'lucide-react';
 
 export function AdminSettings() {
+  const {
+    institutionName: globalInstName,
+    shortName: globalShortName,
+    tagline: globalTagline,
+    officialCode: globalOfficialCode,
+    returningOfficer: globalReturningOfficer,
+    returningOfficerTitle: globalReturningOfficerTitle,
+    electoralBoard: globalElectoralBoard,
+    campusAddress: globalCampusAddress,
+    contactEmail: globalContactEmail,
+    updateInstitution
+  } = useInstitution();
+
   const [settings, setSettings] = useState(null);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
+
+  // Editable institution branding states
+  const [instName, setInstName] = useState(globalInstName || 'ABC Institution');
+  const [shortName, setShortName] = useState(globalShortName || 'ABC');
+  const [tagline, setTagline] = useState(globalTagline || 'Democratic Blockchain Gateway');
+  const [officialCode, setOfficialCode] = useState(globalOfficialCode || 'ABC-INST-2026');
+  const [returningOfficer, setReturningOfficer] = useState(globalReturningOfficer || 'Dr. S. K. Narayanan');
+  const [returningOfficerTitle, setReturningOfficerTitle] = useState(globalReturningOfficerTitle || 'Chief Returning Officer');
+  const [electoralBoard, setElectoralBoard] = useState(globalElectoralBoard || 'ABC Institution Electoral Board');
+  const [campusAddress, setCampusAddress] = useState(globalCampusAddress || 'Main Academic Block, Tech City');
+  const [contactEmail, setContactEmail] = useState(globalContactEmail || 'elections@abcinstitution.edu');
+  const [instSaving, setInstSaving] = useState(false);
+  const [instSavedMsg, setInstSavedMsg] = useState('');
+
+  // Keep in sync with global institution state
+  useEffect(() => {
+    if (globalInstName) setInstName(globalInstName);
+    if (globalShortName) setShortName(globalShortName);
+    if (globalTagline) setTagline(globalTagline);
+    if (globalOfficialCode) setOfficialCode(globalOfficialCode);
+    if (globalReturningOfficer) setReturningOfficer(globalReturningOfficer);
+    if (globalReturningOfficerTitle) setReturningOfficerTitle(globalReturningOfficerTitle);
+    if (globalElectoralBoard) setElectoralBoard(globalElectoralBoard);
+    if (globalCampusAddress) setCampusAddress(globalCampusAddress);
+    if (globalContactEmail) setContactEmail(globalContactEmail);
+  }, [
+    globalInstName,
+    globalShortName,
+    globalTagline,
+    globalOfficialCode,
+    globalReturningOfficer,
+    globalReturningOfficerTitle,
+    globalElectoralBoard,
+    globalCampusAddress,
+    globalContactEmail
+  ]);
 
   // Editable configuration states
   const [electionDate, setElectionDate] = useState('');
@@ -50,6 +104,7 @@ export function AdminSettings() {
         if (data.dailyEndTime) setDailyEnd(data.dailyEndTime);
         if (data.votingHoursEnforced !== undefined) setHoursEnforced(data.votingHoursEnforced);
         if (data.electionDate) setElectionDate(data.electionDate);
+        if (data.institutionName && !globalInstName) setInstName(data.institutionName);
       })
       .catch(err => console.error(err));
   }, []);
@@ -62,11 +117,49 @@ export function AdminSettings() {
     }
   };
 
+  const handleSaveInstitution = async (e) => {
+    e?.preventDefault();
+    setInstSaving(true);
+    setInstSavedMsg('');
+    try {
+      await updateInstitution({
+        institutionName: instName.trim(),
+        shortName: shortName.trim(),
+        tagline: tagline.trim(),
+        officialCode: officialCode.trim(),
+        returningOfficer: returningOfficer.trim(),
+        returningOfficerTitle: returningOfficerTitle.trim(),
+        electoralBoard: electoralBoard.trim(),
+        campusAddress: campusAddress.trim(),
+        contactEmail: contactEmail.trim()
+      });
+      setInstSavedMsg(`Institution branding updated! "${instName.trim()}" is now active everywhere across all 4 portals.`);
+      setTimeout(() => setInstSavedMsg(''), 6000);
+    } catch (err) {
+      alert('Error updating institution branding: ' + err.message);
+    } finally {
+      setInstSaving(false);
+    }
+  };
+
   const handleSaveAllSettings = async (e) => {
     e?.preventDefault();
     setSaving(true);
     setSaveSuccess('');
     try {
+      // Also update institution
+      await updateInstitution({
+        institutionName: instName.trim(),
+        shortName: shortName.trim(),
+        tagline: tagline.trim(),
+        officialCode: officialCode.trim(),
+        returningOfficer: returningOfficer.trim(),
+        returningOfficerTitle: returningOfficerTitle.trim(),
+        electoralBoard: electoralBoard.trim(),
+        campusAddress: campusAddress.trim(),
+        contactEmail: contactEmail.trim()
+      });
+
       const res = await fetch(`${API_BASE_URL}/settings/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,7 +167,8 @@ export function AdminSettings() {
           voting_hours_enforced: hoursEnforced,
           daily_start_time: dailyStart,
           daily_end_time: dailyEnd,
-          election_date: electionDate
+          election_date: electionDate,
+          institution_name: instName.trim()
         })
       });
       const updated = await res.json();
@@ -102,19 +196,19 @@ export function AdminSettings() {
             </h1>
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Configure voting schedules, biometric thresholds, cryptographic consensus, and physical campus access rules.
+            Master institutional identity, election windows, biometric thresholds, and cryptographic consensus parameters.
           </p>
         </div>
 
         <button
           type="button"
           onClick={handleSaveAllSettings}
-          disabled={saving}
+          disabled={saving || instSaving}
           className="btn btn-primary"
           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800 }}
         >
           <Save size={16} />
-          <span>{saving ? 'Applying...' : 'Save & Apply Configuration'}</span>
+          <span>{saving ? 'Applying Across System...' : 'Save & Propagate All Settings'}</span>
         </button>
       </div>
 
@@ -124,6 +218,257 @@ export function AdminSettings() {
           <span>{saveSuccess}</span>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* 🏛️ MASTER INSTITUTIONAL IDENTITY & COLLEGE NAME HUB */}
+      {/* ======================================================== */}
+      <div className="glass-card" style={{
+        padding: '28px',
+        marginBottom: '26px',
+        background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.05) 0%, rgba(99, 102, 241, 0.04) 50%, var(--bg-surface) 100%)',
+        border: '1.5px solid rgba(2, 132, 199, 0.3)',
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px rgba(2, 132, 199, 0.08)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              boxShadow: '0 6px 18px rgba(2, 132, 199, 0.35)'
+            }}>
+              <School size={26} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0, letterSpacing: '-0.01em', color: 'var(--text-primary)' }}>
+                  Institutional Identity &amp; College Name Master Control
+                </h2>
+                <span className="badge badge-indigo" style={{ fontSize: '0.68rem', padding: '3px 8px', fontWeight: 800 }}>
+                  <Sparkles size={11} style={{ marginRight: '4px' }} />
+                  GLOBAL REACTIVE PROPAGATION
+                </span>
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                Whenever you update the college or university name below, it dynamically propagates <strong>everywhere</strong> across the entire system — including Login, Navigation Bar, Smart ID Cards, Graduation Certificates, EVM Kiosks, and Voter Portals.
+              </p>
+            </div>
+          </div>
+
+          {/* Real-time Live Preview Pill */}
+          <div style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid rgba(2, 132, 199, 0.3)',
+            borderRadius: '12px',
+            padding: '10px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
+              Live System Preview
+            </span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0284c7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="pulse-dot-green" style={{ width: '8px', height: '8px' }}></span>
+              {instName || 'Institution Name'}
+            </span>
+          </div>
+        </div>
+
+        {instSavedMsg && (
+          <div style={{ background: '#ecfdf5', border: '1.5px solid #a7f3d0', borderRadius: '10px', padding: '12px 16px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px', color: '#065f46', fontSize: '0.85rem', fontWeight: 700, animation: 'fadeIn 0.2s ease' }}>
+            <CheckCircle2 size={18} color="#10b981" />
+            <span>{instSavedMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveInstitution}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+            {/* 1. College Full Name */}
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                Official College / University Name <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={instName}
+                  onChange={e => setInstName(e.target.value)}
+                  placeholder="e.g. ABC Institution of Technology"
+                  required
+                  style={{
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    padding: '12px 14px',
+                    borderColor: 'rgba(2, 132, 199, 0.4)',
+                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.08)'
+                  }}
+                />
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                This is the primary institutional title displayed on official graduation certificates, student cards, and login screens.
+              </div>
+            </div>
+
+            {/* 2. Institutional Acronym */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Institutional Acronym / Short Code
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={shortName}
+                onChange={e => setShortName(e.target.value)}
+                placeholder="e.g. ABC"
+                style={{ fontWeight: 700 }}
+              />
+            </div>
+
+            {/* 3. Official Accreditation / System Code */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Institution Code / Identifier
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={officialCode}
+                onChange={e => setOfficialCode(e.target.value)}
+                placeholder="e.g. ABC-INST-2026"
+                style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}
+              />
+            </div>
+
+            {/* 4. Election Tagline */}
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Institutional Tagline / Motto
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={tagline}
+                onChange={e => setTagline(e.target.value)}
+                placeholder="e.g. Democratic Blockchain Gateway"
+              />
+            </div>
+
+            {/* 5. Returning Officer Name */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Chief Returning Officer
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={returningOfficer}
+                onChange={e => setReturningOfficer(e.target.value)}
+                placeholder="e.g. Dr. S. K. Narayanan"
+              />
+            </div>
+
+            {/* 6. Returning Officer Designation */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Returning Officer Title
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={returningOfficerTitle}
+                onChange={e => setReturningOfficerTitle(e.target.value)}
+                placeholder="e.g. Chief Returning Officer & Dean"
+              />
+            </div>
+
+            {/* 7. Electoral Board Authority */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Electoral Board / Commission Name
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={electoralBoard}
+                onChange={e => setElectoralBoard(e.target.value)}
+                placeholder="e.g. ABC Institution Electoral Board"
+              />
+            </div>
+
+            {/* 8. Contact Email */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Official Election Contact Email
+              </label>
+              <input
+                type="email"
+                className="input-field"
+                value={contactEmail}
+                onChange={e => setContactEmail(e.target.value)}
+                placeholder="e.g. elections@abcinstitution.edu"
+              />
+            </div>
+
+            {/* 9. Campus Address */}
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                Campus Address / Directorate Location
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={campusAddress}
+                onChange={e => setCampusAddress(e.target.value)}
+                placeholder="e.g. Main Academic Block, Tech City"
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.76rem' }}>
+              <Globe size={14} color="#0284c7" />
+              <span>Broadcasts real-time events to all browser tabs, student cards, and certificates.</span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={instSaving}
+              className="btn btn-primary"
+              style={{
+                background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+                padding: '10px 22px',
+                fontSize: '0.86rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)'
+              }}
+            >
+              {instSaving ? (
+                <>
+                  <RefreshCw size={15} className="spin" />
+                  <span>Propagating Everywhere...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={15} />
+                  <span>Apply &amp; Propagate College Name Everywhere</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Grid of Configuration Panels */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '22px' }}>

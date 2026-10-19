@@ -12,12 +12,14 @@ class Department(models.Model):
     student_id_prefix = models.CharField(max_length=20, default='STU')
     current_count = models.IntegerField(default=0)
     contact_email = models.EmailField(blank=True, null=True)
+    representative_name = models.CharField(max_length=150, blank=True, null=True, default='')
+    representative_roll = models.CharField(max_length=50, blank=True, null=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def generate_next_student_id(self):
         self.current_count += 1
         self.save()
-        if self.roll_prefix.endswith(self.code):
+        if self.roll_prefix.endswith(self.code) or self.roll_prefix.startswith('7678') or len(self.roll_prefix) >= 7:
             return f"{self.roll_prefix}{self.current_count:03d}"
         return f"{self.roll_prefix}{self.code}{self.current_count:03d}"
 
@@ -70,6 +72,8 @@ class UserProfile(models.Model):
     cgpa = models.FloatField(default=8.5)
     attendance = models.IntegerField(default=85)
     disciplinary_clearance = models.BooleanField(default=True)
+    is_representative = models.BooleanField(default=False)
+    representative_title = models.CharField(max_length=100, blank=True, null=True, default='')
 
     # Multi-Factor Authentication (MFA) & Enterprise RBAC Fields
     mfa_enabled = models.BooleanField(default=False)

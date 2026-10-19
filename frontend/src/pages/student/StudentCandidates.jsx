@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { Users, Star, ArrowLeft, Check, Sparkles, Scale, Info, X } from 'lucide-react';
+import {
+  Users,
+  Star,
+  ArrowLeft,
+  Check,
+  Sparkles,
+  Scale,
+  Info,
+  X,
+  Search,
+  Filter,
+  Bookmark,
+  Award,
+  Vote,
+  ExternalLink,
+  Building2,
+  FileText
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function StudentCandidates() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [election, setElection] = useState(null);
   const [candidates, setCandidates] = useState([]);
@@ -13,22 +33,49 @@ export function StudentCandidates() {
   const [compareList, setCompareList] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'MY_SECTION' | 'BOOKMARKED'
+  const [search, setSearch] = useState('');
+  const [bookmarkedIds, setBookmarkedIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('studentvoicex_bookmarked_candidates') || '[]');
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await api.elections.get(id || 1);
-        const electionData = res?.data || res;
-        setElection(electionData);
-        setCandidates(electionData?.candidates || []);
+        setLoading(true);
+        if (id) {
+          const res = await api.elections.get(id);
+          const electionData = res?.data || res;
+          setElection(electionData);
+          setCandidates(electionData?.candidates || []);
+        } else {
+          const candList = await api.candidates.list();
+          setCandidates(Array.isArray(candList) ? candList : candList?.results || []);
+          const elList = await api.elections.list();
+          if (Array.isArray(elList) && elList.length > 0) {
+            setElection(elList[0]);
+          }
+        }
       } catch (err) {
-        console.error('Error fetching election candidates:', err);
+        console.error('Error fetching candidates:', err);
       } finally {
         setLoading(false);
       }
     }
     loadData();
   }, [id]);
+
+  const toggleBookmark = (candId) => {
+    const next = bookmarkedIds.includes(candId)
+      ? bookmarkedIds.filter(i => i !== candId)
+      : [...bookmarkedIds, candId];
+    setBookmarkedIds(next);
+    localStorage.setItem('studentvoicex_bookmarked_candidates', JSON.stringify(next));
+  };
 
   const toggleCompare = (cand) => {
     if (compareList.some((c) => c.id === cand.id)) {
@@ -42,10 +89,26 @@ export function StudentCandidates() {
     }
   };
 
+  const filteredCandidates = candidates.filter(c => {
+    const matchSearch = c.name?.toLowerCase().includes(search.toLowerCase()) ||
+                        c.position?.toLowerCase().includes(search.toLowerCase()) ||
+                        c.department?.toLowerCase().includes(search.toLowerCase());
+    if (!matchSearch) return false;
+
+    if (filterTab === 'MY_SECTION') {
+      return c.section?.toLowerCase() === (user?.section || 'A').toLowerCase();
+    }
+    if (filterTab === 'BOOKMARKED') {
+      return bookmarkedIds.includes(c.id);
+    }
+    return true;
+  });
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      
       {/* Header & Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             type="button"
@@ -65,78 +128,137 @@ export function StudentCandidates() {
             }}
           >
             <ArrowLeft size={16} />
-            <span>Back</span>
+            <span>Ballots</span>
           </button>
           <div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              {election?.title || 'Election Candidates'}
+            <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+              {election?.title || 'Official Election Candidates'}
             </h1>
             <p style={{ fontSize: '0.88rem', color: '#64748b', marginTop: '2px' }}>
-              Official candidate profiles, election symbols, and policy manifestos.
+              Review candidate policies, election symbols, and side-by-side comparison matrices.
             </p>
           </div>
         </div>
 
-        {/* Compare Button */}
-        {compareList.length === 2 && (
-          <button
-            type="button"
-            onClick={() => setShowCompareModal(true)}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '12px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
-              color: '#ffffff',
-              fontSize: '0.85rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
-            }}
+        {/* Top Actions */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Link
+            to="/student/nomination"
+            className="btn btn-secondary"
+            style={{ padding: '9px 16px', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <Scale size={16} />
-            <span>Compare 2 Candidates</span>
-          </button>
-        )}
+            <Award size={15} />
+            <span>File Candidacy</span>
+          </Link>
+
+          {compareList.length === 2 && (
+            <button
+              type="button"
+              onClick={() => setShowCompareModal(true)}
+              className="btn btn-primary"
+              style={{
+                padding: '9px 18px',
+                fontSize: '0.84rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)'
+              }}
+            >
+              <Scale size={16} />
+              <span>Compare 2 Candidates ({compareList[0].name.split(' ')[0]} vs {compareList[1].name.split(' ')[0]})</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          {[
+            { key: 'ALL', label: `All Candidates (${candidates.length})` },
+            { key: 'MY_SECTION', label: `Section ${user?.section || 'A'} Nominees` },
+            { key: 'BOOKMARKED', label: `Shortlisted (${bookmarkedIds.length})` }
+          ].map(tab => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setFilterTab(tab.key)}
+              style={{
+                padding: '7px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                background: filterTab === tab.key ? '#ffffff' : 'transparent',
+                color: filterTab === tab.key ? '#0284c7' : '#64748b',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: filterTab === tab.key ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ position: 'relative', width: '280px' }}>
+          <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <input
+            type="text"
+            placeholder="Search candidates, symbols, or positions..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px 8px 34px',
+              borderRadius: '10px',
+              border: '1.5px solid #cbd5e1',
+              fontSize: '0.82rem',
+              outline: 'none'
+            }}
+          />
+        </div>
       </div>
 
       {/* Candidates Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-        {candidates.map((c) => {
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+        {filteredCandidates.map((c) => {
           const isComparing = compareList.some((item) => item.id === c.id);
+          const isBookmarked = bookmarkedIds.includes(c.id);
+
           return (
             <div
               key={c.id}
+              className="glass-card"
               style={{
                 background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                padding: '24px',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
+                border: isComparing ? '2px solid #0284c7' : '1px solid #e2e8f0',
+                borderRadius: '18px',
+                padding: '22px',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.03)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                position: 'relative'
               }}
             >
               <div>
                 {/* Candidate Photo & Official Symbol */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <div
                     style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '16px',
-                      background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '14px',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                      color: '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.8rem',
-                      overflow: 'hidden',
-                      border: '1px solid #cbd5e1'
+                      fontSize: '1.7rem',
+                      fontWeight: 900,
+                      boxShadow: '0 4px 10px rgba(2, 132, 199, 0.25)'
                     }}
                   >
                     {c.symbol_image ? (
@@ -146,54 +268,60 @@ export function StudentCandidates() {
                     )}
                   </div>
 
-                  <span
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '20px',
-                      fontSize: '0.72rem',
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleBookmark(c.id)}
+                      title={isBookmarked ? 'Remove shortlist' : 'Shortlist candidate'}
+                      style={{
+                        padding: '6px 8px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        background: isBookmarked ? '#fef3c7' : '#f8fafc',
+                        color: isBookmarked ? '#b45309' : '#64748b',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Bookmark size={14} fill={isBookmarked ? '#b45309' : 'none'} />
+                    </button>
+
+                    <span style={{
+                      padding: '3px 8px',
+                      borderRadius: '999px',
+                      fontSize: '0.68rem',
                       fontWeight: 800,
-                      background: '#f0fdf4',
-                      color: '#16a34a',
-                      border: '1px solid #bbf7d0'
-                    }}
-                  >
-                    APPROVED
-                  </span>
+                      background: '#e0f2fe',
+                      color: '#0369a1'
+                    }}>
+                      Sec {c.section || user?.section || 'A'}
+                    </span>
+                  </div>
                 </div>
 
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', margin: '0 0 4px 0' }}>
                   {c.name}
                 </h3>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0284c7', marginBottom: '4px' }}>
-                  {c.position || 'Candidate'}
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0284c7', marginBottom: '4px' }}>
+                  {c.position || 'Class Representative'}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: '14px' }}>
-                  {c.department} • {c.year}
+                <div style={{ fontSize: '0.76rem', color: '#64748b', marginBottom: '12px' }}>
+                  {c.department} &middot; Year {c.year}
                 </div>
 
-                <p style={{ fontSize: '0.84rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                  {c.biography || c.manifesto}
+                <p style={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {c.manifesto || c.biography || 'Dedicated to representing student interests and ensuring open communication with collegiate governance.'}
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }}>
+              <div style={{ marginTop: '18px', display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => setSelectedProfile(c)}
-                  style={{
-                    flex: 1,
-                    padding: '9px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    background: '#f8fafc',
-                    color: '#334155',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, fontSize: '0.8rem', padding: '9px', justifyContent: 'center' }}
                 >
-                  View Profile
+                  Manifesto
                 </button>
 
                 <button
@@ -202,16 +330,25 @@ export function StudentCandidates() {
                   style={{
                     padding: '9px 12px',
                     borderRadius: '10px',
-                    border: isComparing ? '1px solid #0284c7' : '1px solid #cbd5e1',
+                    border: isComparing ? '1.5px solid #0284c7' : '1px solid #cbd5e1',
                     background: isComparing ? '#e0f2fe' : '#ffffff',
                     color: isComparing ? '#0284c7' : '#64748b',
-                    fontSize: '0.82rem',
+                    fontSize: '0.8rem',
                     fontWeight: 700,
                     cursor: 'pointer'
                   }}
                 >
                   {isComparing ? '✓ Comparing' : 'Compare'}
                 </button>
+
+                <Link
+                  to="/student/voting-session"
+                  className="btn btn-primary"
+                  style={{ padding: '9px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Vote size={14} />
+                  <span>Vote</span>
+                </Link>
               </div>
             </div>
           );
@@ -220,182 +357,189 @@ export function StudentCandidates() {
 
       {/* Candidate Profile Modal */}
       {selectedProfile && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: '20px'
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '540px',
-              background: '#ffffff',
-              borderRadius: '24px',
-              padding: '32px',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              position: 'relative'
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setSelectedProfile(null)}
-              style={{
-                position: 'absolute',
-                right: '20px',
-                top: '20px',
-                background: 'transparent',
-                border: 'none',
-                color: '#64748b',
-                cursor: 'pointer'
-              }}
-            >
-              <X size={20} />
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '16px',
-                  background: '#e0f2fe',
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999,
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '560px', padding: '28px', background: '#ffffff', borderRadius: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                  color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '2rem'
-                }}
-              >
-                {selectedProfile.election_symbol || '★'}
-              </div>
-              <div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  {selectedProfile.name}
-                </h2>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0284c7', marginTop: '2px' }}>
-                  {selectedProfile.position} • {selectedProfile.department}
+                  fontSize: '1.6rem',
+                  fontWeight: 900
+                }}>
+                  {selectedProfile.election_symbol || '★'}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                    {selectedProfile.name}
+                  </h3>
+                  <div style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: 800 }}>
+                    {selectedProfile.position} &middot; Section {selectedProfile.section || user?.section || 'A'}
+                  </div>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedProfile(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
             </div>
 
-            <div style={{ marginBottom: '18px' }}>
-              <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>
-                About Candidate
-              </h4>
-              <p style={{ fontSize: '0.86rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
-                {selectedProfile.biography || selectedProfile.manifesto}
-              </p>
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Official Policy Manifesto
+              </div>
+              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.84rem', color: '#334155', lineHeight: 1.6 }}>
+                {selectedProfile.manifesto || selectedProfile.biography || 'Pledging dedicated class leadership.'}
+              </div>
             </div>
 
-            <div style={{ marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '14px', border: '1px solid #f1f5f9' }}>
-              <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
-                Candidate Priorities
-              </h4>
-              <p style={{ fontSize: '0.84rem', color: '#475569', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>
-                {selectedProfile.priorities || '• Student welfare\n• Academic representation\n• Innovation labs'}
-              </p>
-            </div>
+            {selectedProfile.priorities && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Key Priorities
+                </div>
+                <pre style={{ background: '#f1f5f9', padding: '12px', borderRadius: '10px', fontSize: '0.78rem', color: '#475569', fontFamily: 'inherit', margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {selectedProfile.priorities}
+                </pre>
+              </div>
+            )}
 
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedProfile(null);
-                navigate(`/student/voting/${election?.id || id}`);
-              }}
-              style={{
-                width: '100%',
-                padding: '13px',
-                borderRadius: '12px',
-                border: 'none',
-                background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
-                color: '#ffffff',
-                fontSize: '0.92rem',
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
-            >
-              Select Candidate in Ballot →
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedProfile(null)}
+                className="btn btn-secondary"
+                style={{ flex: 1, padding: '10px', fontSize: '0.84rem' }}
+              >
+                Close
+              </button>
+              <Link
+                to="/student/voting-session"
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '10px', fontSize: '0.84rem', justifyContent: 'center' }}
+              >
+                Proceed to Vote
+              </Link>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Candidate Comparison Modal */}
+      {/* Side-by-Side 2-Candidate Comparison Modal */}
       {showCompareModal && compareList.length === 2 && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: '20px'
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '720px',
-              background: '#ffffff',
-              borderRadius: '24px',
-              padding: '32px',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              position: 'relative'
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setShowCompareModal(false)}
-              style={{
-                position: 'absolute',
-                right: '20px',
-                top: '20px',
-                background: 'transparent',
-                border: 'none',
-                color: '#64748b',
-                cursor: 'pointer'
-              }}
-            >
-              <X size={20} />
-            </button>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999,
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '820px', padding: '28px', background: '#ffffff', borderRadius: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Scale size={20} color="#0284c7" />
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                  Side-by-Side Candidate Comparison Matrix
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCompareModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
 
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', marginBottom: '20px' }}>
-              Candidate Comparison
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              {compareList.map((c) => (
-                <div key={c.id} style={{ background: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{c.election_symbol}</div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>{c.name}</h3>
-                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0284c7', marginBottom: '12px' }}>{c.position}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '12px' }}>{c.department} • {c.year}</div>
-
-                  <div style={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.5, marginBottom: '12px' }}>
-                    <strong>Biography:</strong>
-                    <p style={{ margin: '4px 0 0 0' }}>{c.biography || c.manifesto}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '24px' }}>
+              {compareList.map((cand) => (
+                <div key={cand.id} style={{ background: '#f8fafc', padding: '18px', borderRadius: '16px', border: '1.5px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.4rem'
+                    }}>
+                      {cand.election_symbol || '★'}
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                        {cand.name}
+                      </h4>
+                      <div style={{ fontSize: '0.76rem', color: '#0284c7', fontWeight: 700 }}>
+                        {cand.position} &middot; Section {cand.section || user?.section || 'A'}
+                      </div>
+                    </div>
                   </div>
 
-                  <div style={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.5 }}>
-                    <strong>Priorities:</strong>
-                    <p style={{ margin: '4px 0 0 0', whiteSpace: 'pre-line' }}>{c.priorities}</p>
+                  <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5, background: '#ffffff', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <strong>Manifesto:</strong> {cand.manifesto || cand.biography || 'Committed to representing students.'}
                   </div>
+
+                  {cand.priorities && (
+                    <div style={{ fontSize: '0.76rem', color: '#334155', background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <strong>Priorities:</strong>
+                      <pre style={{ margin: '4px 0 0 0', fontFamily: 'inherit', whiteSpace: 'pre-wrap' }}>
+                        {cand.priorities}
+                      </pre>
+                    </div>
+                  )}
+
+                  <Link
+                    to="/student/voting-session"
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.82rem', padding: '9px', justifyContent: 'center' }}
+                  >
+                    Vote for {cand.name.split(' ')[0]}
+                  </Link>
                 </div>
               ))}
             </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowCompareModal(false)}
+                className="btn btn-secondary"
+                style={{ padding: '10px 20px' }}
+              >
+                Close Comparison
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -188,19 +188,19 @@ export function AdminAccessControl() {
       const res = await api.gateway.checkAccess(payload);
       setSimulationResult({
         key: scenarioKey,
-        status: res.status || 'GRANTED',
-        granted: res.access_granted,
-        message: res.message,
+        status: res.status || (res.access_granted ? 'GRANTED' : 'BLOCKED'),
+        granted: Boolean(res.access_granted),
+        message: res.message || (res.access_granted ? 'Access Granted' : 'Access Restricted by Institutional Policy'),
         payload: res
       });
       loadGatewayData();
     } catch (err) {
-      const errData = err.response?.data || { error: err.message };
+      const errData = err.response?.data || err.data || { error: err.message };
       setSimulationResult({
         key: scenarioKey,
         status: errData.status || 'BLOCKED',
         granted: false,
-        message: errData.message || errData.error || 'Access Denied by Institutional Policy',
+        message: errData.message || errData.error || err.message || 'Access Denied by Institutional Policy',
         payload: errData
       });
       loadGatewayData();

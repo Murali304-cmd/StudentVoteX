@@ -7,6 +7,7 @@
 :root {
   /* Clean Light Theme Tokens */
   --bg-main: #f8fafc;
+  --bg-main-translucent: rgba(248, 250, 252, 0.85);
   --bg-surface: #ffffff;
   --bg-surface-translucent: rgba(255, 255, 255, 0.88);
   --bg-surface-secondary: #f1f5f9;
@@ -58,6 +59,73 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+[data-theme="dark"] {
+  /* High-Tech Dark Theme Tokens */
+  --bg-main: #070d1e;
+  --bg-main-translucent: rgba(7, 13, 30, 0.82);
+  --bg-surface: #0f172a;
+  --bg-surface-translucent: rgba(15, 23, 42, 0.82);
+  --bg-surface-secondary: #1e293b;
+  --bg-surface-tertiary: #334155;
+  
+  /* Borders */
+  --border-subtle: rgba(56, 189, 248, 0.18);
+  --border-medium: rgba(56, 189, 248, 0.35);
+  --border-focus: #38bdf8;
+
+  /* Typography */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+
+  /* Accent Glows & Colors */
+  --cyan-primary: #38bdf8;
+  --cyan-light: rgba(56, 189, 248, 0.15);
+  --cyan-border: rgba(56, 189, 248, 0.35);
+  
+  --indigo-primary: #818cf8;
+  --indigo-light: rgba(129, 140, 248, 0.15);
+  --indigo-border: rgba(129, 140, 248, 0.35);
+
+  --emerald-primary: #34d399;
+  --emerald-light: rgba(52, 211, 153, 0.15);
+  --emerald-border: rgba(52, 211, 153, 0.35);
+
+  --amber-primary: #fbbf24;
+  --amber-light: rgba(251, 191, 36, 0.15);
+  --amber-border: rgba(251, 191, 36, 0.35);
+
+  --rose-primary: #fb7185;
+  --rose-light: rgba(251, 113, 133, 0.15);
+  --rose-border: rgba(251, 113, 133, 0.35);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 20px 35px -5px rgba(0, 0, 0, 0.7);
+  --shadow-cyan-glow: 0 0 25px rgba(56, 189, 248, 0.35);
+  --shadow-indigo-glow: 0 0 25px rgba(129, 140, 248, 0.35);
+}
+
+/* Authentic Matrix Dark Theme Tokens (Active on Login Page) */
+[data-matrix-theme="true"] {
+  --bg-main: #020906;
+  --bg-main-translucent: rgba(2, 9, 6, 0.88);
+  --bg-surface: #030c08;
+  --bg-surface-translucent: rgba(3, 12, 8, 0.88);
+  --border-subtle: rgba(16, 185, 129, 0.25);
+  --border-medium: rgba(16, 185, 129, 0.45);
+  --border-focus: #00ff66;
+  --text-primary: #f8fafc;
+  --text-secondary: #a7f3d0;
+  --text-muted: #6ee7b7;
+  --emerald-primary: #00ff66;
+  --emerald-light: rgba(0, 255, 102, 0.15);
+  --shadow-cyan-glow: 0 0 25px rgba(0, 255, 102, 0.4);
+}
+
 /* Reset & Defaults */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -67,12 +135,13 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: #070d1e;
-  color: #f8fafc;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
@@ -97,12 +166,13 @@ code, pre, .font-mono {
 /* Glassmorphism Card System */
 .glass-card {
   background: var(--bg-surface-translucent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: var(--shadow-md);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 .glass-card:hover {

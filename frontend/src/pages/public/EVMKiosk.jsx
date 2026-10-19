@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { api, API_BASE_URL } from '../../services/api';
 import { AntiScreenshotShield } from '../../components/common/AntiScreenshotShield';
+import { useInstitution } from '../../context/InstitutionContext';
 
 // Multi-tone Web Audio API EVM Acoustic Synthesizer
 function playEVMAcoustic(type = 'VOTE_CONFIRMED') {
@@ -90,6 +91,7 @@ function playEVMAcoustic(type = 'VOTE_CONFIRMED') {
 const BRAILLE_CHARS = ['⠁', '⠃', '⠉', '⠙', '⠑', '⠋', '⠛', '⠓', '⠊', '⠚'];
 
 export default function EVMKiosk() {
+  const { institutionName } = useInstitution();
   /**
    * 5-Stage Sequential Flow:
    * 1. 'ENTER_ROLL_NO'      -> First enter Roll Number
@@ -106,6 +108,7 @@ export default function EVMKiosk() {
   // Active Voter & Election State
   const [voter, setVoter] = useState(null);
   const [activeBallot, setActiveBallot] = useState(null);
+  const [availableBallots, setAvailableBallots] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [anonymousToken, setAnonymousToken] = useState(null);
 
@@ -832,6 +835,7 @@ export default function EVMKiosk() {
         setVoter(response.student);
 
         if (response.eligibleBallots && response.eligibleBallots.length > 0) {
+          setAvailableBallots(response.eligibleBallots);
           const firstBallot = response.eligibleBallots.find(b => !b.hasVoted) || response.eligibleBallots[0];
 
           if (firstBallot.hasVoted) {
@@ -972,6 +976,7 @@ export default function EVMKiosk() {
     setRollInput('');
     setVoter(null);
     setActiveBallot(null);
+    setAvailableBallots([]);
     setCandidates([]);
     setAnonymousToken(null);
     setChosenCandidate(null);
@@ -1608,7 +1613,7 @@ export default function EVMKiosk() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '3px', flexWrap: 'wrap' }}>
                   <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Building size={12} color="#64748b" />
-                    <span>StudentVoiceX Election Commission • ABC Institution</span>
+                    <span>StudentVoiceX Election Commission • {institutionName || 'ABC Institution'}</span>
                   </div>
                   <div style={{
                     fontSize: '0.66rem',
@@ -2115,7 +2120,7 @@ export default function EVMKiosk() {
                         ref={rollInputRef}
                         type="text"
                         autoFocus
-                        placeholder="e.g. STU2026001 or 2024IT001"
+                        placeholder="e.g. 7678BIT001, 7678BCS001, STU2026001"
                         value={rollInput}
                         onChange={(e) => setRollInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleVerifyRollNo()}
@@ -2155,6 +2160,41 @@ export default function EVMKiosk() {
                       {loading ? <RefreshCw size={20} className="spin" /> : <ArrowRight size={20} />}
                       <span>Verify & Vote</span>
                     </button>
+                  </div>
+
+                  {/* Quick Department Roll Chips for Verification */}
+                  <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #1e293b', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.66rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>
+                      Quick Department Roll:
+                    </span>
+                    {[
+                      { roll: '7678BIT001', label: '7678BIT001 (IT DR - Muralidharan)' },
+                      { roll: '7678BIT002', label: '7678BIT002 (IT 3rd Yr - Kavitha)' },
+                      { roll: '7678BCS001', label: '7678BCS001 (CSE DR - Arjun)' },
+                      { roll: '7678BEC001', label: '7678BEC001 (ECE DR - Pooja)' }
+                    ].map(chip => (
+                      <button
+                        key={chip.roll}
+                        type="button"
+                        onClick={() => {
+                          setRollInput(chip.roll);
+                          handleVerifyRollNo(chip.roll);
+                        }}
+                        style={{
+                          background: '#040711',
+                          border: '1px solid #334155',
+                          color: '#38bdf8',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.68rem',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -2753,7 +2793,7 @@ export default function EVMKiosk() {
                       }}>
                         <div style={{ textAlign: 'center', borderBottom: '1px solid #000', paddingBottom: '3px', marginBottom: '4px' }}>
                           <div style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase' }}>
-                            ABC INSTITUTION VVPAT SLIP
+                            {(institutionName || 'ABC INSTITUTION').toUpperCase()} VVPAT SLIP
                           </div>
                         </div>
 
@@ -2831,6 +2871,62 @@ export default function EVMKiosk() {
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
               overflow: 'hidden'
             }}>
+
+              {/* Multi-Ballot Selection Switcher (Campus Election vs Department Representative Election) */}
+              {availableBallots.length > 1 && (
+                <div style={{
+                  background: '#040711',
+                  borderBottom: '2px solid #334155',
+                  padding: '10px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  overflowX: 'auto'
+                }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                    Select Eligible Ballot:
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {availableBallots.map((b) => {
+                      const isCurrent = activeBallot?.electionId === b.electionId;
+                      return (
+                        <button
+                          key={b.electionId}
+                          type="button"
+                          onClick={() => {
+                            setActiveBallot(b);
+                            setCandidates(b.candidates || []);
+                            setAnonymousToken(b.anonymousToken);
+                            setChosenCandidate(null);
+                            setChosenIndex(null);
+                          }}
+                          style={{
+                            background: isCurrent ? 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)' : '#1e293b',
+                            color: '#ffffff',
+                            border: isCurrent ? '1.5px solid #38bdf8' : '1px solid #475569',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.74rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: isCurrent ? '0 0 12px rgba(2, 132, 199, 0.5)' : 'none'
+                          }}
+                        >
+                          <span>{b.isCommonCampus ? '🏛️ Campus-Wide Election' : `🎓 DR Ballot: ${b.department}`}</span>
+                          {b.hasVoted && (
+                            <span style={{ fontSize: '0.62rem', background: '#ef4444', color: '#ffffff', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                              ALREADY VOTED
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* BU Bezel Header */}
               <div style={{

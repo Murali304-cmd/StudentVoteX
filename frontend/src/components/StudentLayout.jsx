@@ -9,7 +9,7 @@ export function StudentLayout() {
 
   if (isVotingSession) {
     return (
-      <div style={{ minHeight: '100vh', width: '100vw', background: '#090d16', color: '#f8fafc', overflowX: 'hidden' }}>
+      <div style={{ minHeight: '100vh', width: '100vw', background: 'rgba(9, 13, 22, 0.94)', backdropFilter: 'blur(16px)', color: '#f8fafc', overflowX: 'hidden' }}>
         <main style={{ minHeight: '100vh', width: '100%' }}>
           <Outlet />
         </main>
@@ -18,7 +18,17 @@ export function StudentLayout() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'radial-gradient(ellipse at 15% 15%, rgba(2, 132, 199, 0.05) 0%, transparent 60%), radial-gradient(ellipse at 85% 85%, rgba(99, 102, 241, 0.05) 0%, transparent 60%), var(--bg-main-translucent)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        transition: 'background 0.3s ease'
+      }}
+    >
       <Navbar />
       <div style={{ display: 'flex', flex: 1 }}>
         <StudentSidebar />
@@ -29,3 +39,5 @@ export function StudentLayout() {
     </div>
   );
 }
+
+export default StudentLayout;

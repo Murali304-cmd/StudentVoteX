@@ -33,12 +33,15 @@ async function request(endpoint, options = {}) {
   }
 
   if (!response.ok) {
-    let errorMsg = (data && data.error) || (data && data.detail) || (typeof data === 'string' ? data : 'An API error occurred');
+    let errorMsg = (data && (data.error || data.detail || data.message)) || (typeof data === 'string' ? data : 'An API error occurred');
     if (typeof errorMsg === 'string' && errorMsg.includes('<!DOCTYPE html>')) {
       const match = errorMsg.match(/<title>(.*?)<\/title>/i);
       errorMsg = match ? match[1] : `Server Error (${response.status})`;
     }
-    throw new Error(errorMsg);
+    const err = new Error(errorMsg);
+    err.response = { status: response.status, data };
+    err.data = data;
+    throw err;
   }
 
   return data;
@@ -166,6 +169,9 @@ export const api = {
     update: (id, data) => request(`/elections/${id}/`, {
       method: 'PUT',
       body: JSON.stringify(data)
+    }),
+    delete: (id) => request(`/elections/${id}/`, {
+      method: 'DELETE'
     })
   },
 
@@ -261,6 +267,27 @@ export const api = {
     getRankedChoiceResults: (electionId) => request(`/admin/results/${electionId}/ranked-choice/`)
   },
 
+  database: {
+    getStats: () => request('/admin/database/stats/'),
+    getTable: (tableName, params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/admin/database/tables/${tableName}/${query ? '?' + query : ''}`);
+    },
+    executeQuery: (sql) => request('/admin/database/query/', {
+      method: 'POST',
+      body: JSON.stringify({ sql })
+    }),
+    getSchema: (tableName = '') => request(`/admin/database/schema/${tableName ? tableName + '/' : ''}`),
+    getBackupUrl: (key = 'Admin@ABC2026') => {
+      const token = localStorage.getItem('studentvoicex_token') || localStorage.getItem('votanova_token') || localStorage.getItem('votechain_token');
+      return `${API_BASE_URL}/admin/database/backup/?token=${encodeURIComponent(token || '')}${key ? '&key=' + encodeURIComponent(key) : ''}`;
+    },
+    getHtmlViewUrl: (key = '') => {
+      const token = localStorage.getItem('studentvoicex_token') || localStorage.getItem('votanova_token') || localStorage.getItem('votechain_token');
+      return `${API_BASE_URL}/admin/database/html-view/?token=${encodeURIComponent(token || '')}${key ? '&key=' + encodeURIComponent(key) : ''}`;
+    }
+  },
+
   evm: {
     verifyVoter: async (identifier) => {
       const res = await request('/evm/verify-voter/', {
@@ -306,15 +333,62 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data)
     }),
+    update: (data) => request('/departments/', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
     generateId: (deptCode) => request('/departments/generate-id/', {
       method: 'POST',
       body: JSON.stringify({ department_code: deptCode })
+    }),
+    delete: (code) => request(`/departments/${encodeURIComponent(code)}/`, {
+      method: 'DELETE'
     })
   },
 
   ceo: {
     getAssignedElections: (userId) => request(`/ceo/assigned-elections/${userId ? '?userId=' + encodeURIComponent(userId) : ''}`),
     listCEOs: () => request('/admin/students/?role=CEO')
+  },
+
+  student: {
+    getSectionInfo: (userId) => request(`/student/section-info/${userId ? '?userId=' + encodeURIComponent(userId) : ''}`),
+    getNotifications: (userId) => request(`/student/notifications/${userId ? '?userId=' + encodeURIComponent(userId) : ''}`),
+    markNotificationRead: (id, userId) => request(`/student/notifications/${id}/read/`, {
+      method: 'POST',
+      body: JSON.stringify({ userId })
+    }),
+    markAllNotificationsRead: (userId) => request('/student/notifications/read-all/', {
+      method: 'POST',
+      body: JSON.stringify({ userId })
+    }),
+    getCampusRadar: (section) => request(`/student/campus-radar/${section ? '?section=' + encodeURIComponent(section) : ''}`),
+    checkInBoothQueue: (data) => request('/student/campus-radar/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    getTownhallQnA: () => request('/student/townhall-qna/'),
+    postTownhallQuestion: (data) => request('/student/townhall-qna/', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'ASK', ...data })
+    }),
+    upvoteTownhallQuestion: (questionId) => request('/student/townhall-qna/', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'UPVOTE', question_id: questionId })
+    }),
+    getSectionPoll: () => request('/student/section-poll/'),
+    voteSectionPoll: (optionId) => request('/student/section-poll/', {
+      method: 'POST',
+      body: JSON.stringify({ option_id: optionId })
+    })
+  },
+
+  institution: {
+    getSettings: () => request('/institution/settings/'),
+    updateSettings: (data) => request('/admin/settings/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
   }
 };
 

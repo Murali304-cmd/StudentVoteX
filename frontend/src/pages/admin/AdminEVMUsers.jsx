@@ -58,39 +58,11 @@ export function AdminEVMUsers() {
     setLoading(true);
     try {
       const data = await api.evmStations.list();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setStations(data);
-      } else {
-        // Fallback default demo stations if backend is empty
-        setStations([
-          {
-            id: 1,
-            username: 'evm_kiosk_01',
-            full_name: 'EVM Station #01 (Main Campus Auditorium)',
-            department: 'Auditorium Polling Enclave (Ground Floor)',
-            section: 'Booth-01',
-            pin: 'EVM@ABC2026',
-            status: 'ONLINE',
-            votesCast: 0,
-            lastActive: 'Ready for Ballots',
-            hardwareFingerprint: 'SHA256:7F89B2C3EVM01'
-          },
-          {
-            id: 2,
-            username: 'evm_kiosk_02',
-            full_name: 'EVM Station #02 (Central Library West Wing)',
-            department: 'Library Polling Enclave (West Wing)',
-            section: 'Booth-02',
-            pin: 'EVM@ABC2026',
-            status: 'ONLINE',
-            votesCast: 0,
-            lastActive: 'Ready for Ballots',
-            hardwareFingerprint: 'SHA256:8E91A3D4EVM02'
-          }
-        ]);
       }
     } catch (err) {
-      console.warn('Failed to load stations from backend, using active state:', err);
+      console.warn('Failed to load stations from backend:', err);
     } finally {
       setLoading(false);
     }
@@ -170,9 +142,8 @@ export function AdminEVMUsers() {
       setStations(prev => prev.filter(s => s.id !== stationToDelete.id));
       showToast(`EVM Station "${stationToDelete.full_name}" decommissioned and removed.`);
     } catch (err) {
-      // Local removal
-      setStations(prev => prev.filter(s => s.id !== stationToDelete.id));
-      showToast(`EVM Station "${stationToDelete.full_name}" removed from active stations.`);
+      console.error("Delete EVM station error:", err);
+      showToast(`Failed to decommission station: ${err.message}`, 'error');
     } finally {
       setActionLoading(false);
       setShowDeleteModal(false);

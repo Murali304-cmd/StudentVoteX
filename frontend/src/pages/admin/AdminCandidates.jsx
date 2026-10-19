@@ -84,6 +84,19 @@ export function AdminCandidates() {
     }
   };
 
+  const handleDeleteCandidate = async (candidate) => {
+    if (!confirm(`Are you sure you want to delete candidate "${candidate.name}" (${candidate.candidate_id})?`)) {
+      return;
+    }
+    try {
+      await api.candidates.delete(candidate.id);
+      setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+      fetchData();
+    } catch (e) {
+      alert("Failed to delete candidate: " + e.message);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
@@ -166,8 +179,17 @@ export function AdminCandidates() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)', fontSize: '0.78rem' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Ballot Choice Reference</span>
               <span className="badge badge-emerald">Active on Ballot</span>
+              <button
+                type="button"
+                onClick={() => handleDeleteCandidate(cand)}
+                className="btn btn-sm"
+                style={{ padding: '3px 8px', fontSize: '0.72rem', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Delete Candidate"
+              >
+                <Trash2 size={12} />
+                <span>Delete</span>
+              </button>
             </div>
           </div>
         ))}
